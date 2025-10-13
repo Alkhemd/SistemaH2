@@ -5,8 +5,11 @@ class DashboardController {
   // GET /api/v1/dashboard/estadisticas - Obtener estadísticas generales
   async getEstadisticas(req, res) {
     try {
+      console.log('[Dashboard] Obteniendo estadísticas...');
+
       // Total de equipos
       const totalEquipos = await Equipo.count();
+      console.log('[Dashboard] Total equipos:', totalEquipos);
 
       // Equipos por estado
       const equiposOperativos = await Equipo.count({
@@ -44,6 +47,8 @@ class DashboardController {
         }
       });
 
+      console.log('[Dashboard] Estadísticas calculadas exitosamente');
+
       res.json({
         success: true,
         data: {
@@ -57,10 +62,12 @@ class DashboardController {
       });
     } catch (error) {
       console.error('Error en getEstadisticas:', error);
+      console.error('Stack trace:', error.stack);
       res.status(500).json({
         success: false,
         message: 'Error al obtener estadísticas',
-        error: error.message
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
   }
@@ -70,21 +77,26 @@ class DashboardController {
     try {
       const { limit = 10 } = req.query;
 
+      console.log('[Dashboard] Obteniendo actividad reciente, limit:', limit);
+
       // Obtener las órdenes más recientes con sus relaciones
       const ordenesRecientes = await OrdenTrabajo.findAll({
         limit: parseInt(limit),
         include: [
           { 
             association: 'equipo',
+            required: false,
             include: [
-              { association: 'fabricante' },
-              { association: 'modalidad' }
+              { association: 'fabricante', required: false },
+              { association: 'modalidad', required: false }
             ]
           },
-          { association: 'cliente' }
+          { association: 'cliente', required: false }
         ],
         order: [['fecha_apertura', 'DESC']]
       });
+
+      console.log('[Dashboard] Órdenes encontradas:', ordenesRecientes.length);
 
       // Mapear a formato de actividad
       const actividades = ordenesRecientes.map(orden => ({
@@ -105,10 +117,12 @@ class DashboardController {
       });
     } catch (error) {
       console.error('Error en getActividadReciente:', error);
+      console.error('Stack trace:', error.stack);
       res.status(500).json({
         success: false,
         message: 'Error al obtener actividad reciente',
-        error: error.message
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
   }

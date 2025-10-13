@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { FabricanteForm } from '@/components/forms/FabricanteForm';
 import { useFabricantes } from '@/hooks/useCatalogs';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
 export default function FabricantesPage() {
   const { fabricantes, isLoading, createFabricante, updateFabricante, deleteFabricante } = useFabricantes();
@@ -105,8 +106,14 @@ export default function FabricantesPage() {
 
       {/* Lista de fabricantes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnimatePresence mode="popLayout">
-          {filteredFabricantes.map((fabricante, index) => (
+        {isLoading ? (
+          // Mostrar skeletons mientras carga
+          Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {filteredFabricantes.map((fabricante, index) => (
             <motion.div
               key={fabricante.id}
               initial={{ opacity: 0, y: 20 }}
@@ -159,10 +166,11 @@ export default function FabricantesPage() {
               </div>
             </motion.div>
           ))}
-        </AnimatePresence>
+          </AnimatePresence>
+        )}
       </div>
 
-      {filteredFabricantes.length === 0 && (
+      {!isLoading && filteredFabricantes.length === 0 && (
         <div className="text-center py-12">
           <BuildingOfficeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { TecnicoForm } from '@/components/forms/TecnicoForm';
 import { useTecnicos } from '@/hooks/useCatalogs';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const especialidadLabels = {
   'XR': 'Rayos X',
@@ -122,8 +123,14 @@ export default function TecnicosPage() {
 
       {/* Lista de técnicos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnimatePresence mode="popLayout">
-          {filteredTecnicos.map((tecnico, index) => (
+        {isLoading ? (
+          // Mostrar skeletons mientras carga
+          Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonCard key={index} />
+          ))
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {filteredTecnicos.map((tecnico, index) => (
             <motion.div
               key={tecnico.id}
               initial={{ opacity: 0, y: 20 }}
@@ -194,10 +201,11 @@ export default function TecnicosPage() {
               </div>
             </motion.div>
           ))}
-        </AnimatePresence>
+          </AnimatePresence>
+        )}
       </div>
 
-      {filteredTecnicos.length === 0 && (
+      {!isLoading && filteredTecnicos.length === 0 && (
         <div className="text-center py-12">
           <UserIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

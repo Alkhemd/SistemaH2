@@ -24,6 +24,8 @@ import { useOrders } from '@/hooks/useApi';
 import { useEquipments, useClients } from '@/hooks/useApi';
 import { useTecnicos } from '@/hooks/useCatalogs';
 import { showToast } from '@/components/ui/Toast';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import { useStore } from '@/store/useStore';
 
 interface Order {
   id: string;
@@ -49,6 +51,7 @@ export default function OrdenesPage() {
   const { equipments } = useEquipments();
   const { clients } = useClients();
   const { tecnicos } = useTecnicos();
+  const { isLoading: isLoadingOrders } = useStore();
   
   // Estados locales
   const [searchTerm, setSearchTerm] = useState('');
@@ -373,27 +376,30 @@ export default function OrdenesPage() {
       </motion.div>
 
       {/* Orders Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="card overflow-hidden"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">ID</th>
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Equipo</th>
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Cliente</th>
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Prioridad</th>
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Estado</th>
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Fecha</th>
-                <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order, index) => (
+      {isLoadingOrders ? (
+        <SkeletonTable rows={8} />
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="card overflow-hidden"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">ID</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Equipo</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Cliente</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Prioridad</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Estado</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Fecha</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredOrders.map((order, index) => (
                 <motion.tr
                   key={order.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -515,9 +521,9 @@ export default function OrdenesPage() {
 
         {/* Empty State */}
         {filteredOrders.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Search size={32} className="text-[#86868B]" />
+          <div className="text-center py-16 px-4">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText size={32} className="text-[#6E6E73]" />
             </div>
             <h3 className="text-xl font-semibold text-[#1D1D1F] mb-2">
               No se encontraron órdenes
@@ -533,7 +539,8 @@ export default function OrdenesPage() {
             </button>
           </div>
         )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Pagination */}
       {filteredOrders.length > 0 && (
