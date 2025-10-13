@@ -117,7 +117,7 @@ export default function ClientesPage() {
         variants={fade}
         initial="hidden"
         animate="visible"
-        className="flex flex-col sm-flex-row sm-items-center sm-justify-between gap-4"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
           <ScrollReveal enableBlur={true} baseOpacity={0.15} baseRotation={2} containerClassName="mb-2">
@@ -361,7 +361,7 @@ export default function ClientesPage() {
       >
         {modalType === 'view' && selectedClient ? (
           <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md-grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Información General</h3>
                 <div className="space-y-3">

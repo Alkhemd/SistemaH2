@@ -304,7 +304,7 @@ export default function EquiposPage() {
       >
         {modalType === 'view' && selectedEquipment ? (
           <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md-grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Información General</h3>
                 <div className="space-y-3">
@@ -352,7 +352,7 @@ export default function EquiposPage() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 mb-4">Fechas Importantes</h3>
-              <div className="grid grid-cols-1 md-grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <span className="text-sm font-medium text-gray-600">Instalación:</span>
                   <p className="text-gray-900">{selectedEquipment.fechaInstalacion}</p>

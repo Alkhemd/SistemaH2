@@ -4,6 +4,10 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
+// Validar variables de entorno
+const { validateEnv } = require('./utils/validateEnv');
+validateEnv();
+
 // Importar configuraciones
 const sequelize = require('./config/database');
 const { swaggerUi, specs } = require('./config/swagger');

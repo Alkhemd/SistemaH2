@@ -5,6 +5,7 @@ const router = express.Router();
 const ClienteController = require('../controllers/ClienteController');
 const EquipoController = require('../controllers/EquipoController');
 const OrdenTrabajoController = require('../controllers/OrdenTrabajoController');
+const DashboardController = require('../controllers/DashboardController');
 const {
   ModalidadController,
   FabricanteController,
@@ -285,7 +286,43 @@ router.get('/equipos/:id/historial', EquipoController.getHistorial.bind(EquipoCo
 createCrudRoutes('ordenes', OrdenTrabajoController);
 router.get('/ordenes/:id/historial', OrdenTrabajoController.getWithHistorial.bind(OrdenTrabajoController));
 router.get('/ordenes/estado/:estado', OrdenTrabajoController.getByEstado.bind(OrdenTrabajoController));
-router.get('/dashboard/estadisticas', OrdenTrabajoController.getEstadisticas.bind(OrdenTrabajoController));
+// === RUTAS PARA DASHBOARD ===
+/**
+ * @openapi
+ * /dashboard/estadisticas:
+ *   get:
+ *     summary: Obtener estadísticas generales del dashboard
+ *     tags:
+ *       - Dashboard
+ *     responses:
+ *       200:
+ *         description: Estadísticas del sistema
+ * /dashboard/actividad-reciente:
+ *   get:
+ *     summary: Obtener actividad reciente del sistema
+ *     tags:
+ *       - Dashboard
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Lista de actividades recientes
+ * /dashboard/resumen:
+ *   get:
+ *     summary: Obtener resumen completo del dashboard
+ *     tags:
+ *       - Dashboard
+ *     responses:
+ *       200:
+ *         description: Resumen completo
+ */
+router.get('/dashboard/estadisticas', DashboardController.getEstadisticas.bind(DashboardController));
+router.get('/dashboard/actividad-reciente', DashboardController.getActividadReciente.bind(DashboardController));
+router.get('/dashboard/resumen', DashboardController.getResumen.bind(DashboardController));
 
 // === RUTAS PARA MODALIDADES ===
 /**

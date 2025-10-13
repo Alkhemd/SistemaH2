@@ -5,6 +5,7 @@ import { equipmentApi, clientApi, orderApi } from '@/lib/api';
 import { EquipmentUI, ClientUI, OrderUI } from '@/types/equipment';
 import { useStore } from '@/store/useStore';
 import { showToast } from '@/components/ui/Toast';
+import { getErrorMessage } from '@/types/errors';
 import { 
   mapEquipmentToUI, 
   mapEquipmentToAPI, 
@@ -27,10 +28,10 @@ export const useEquipments = () => {
       setLoading(true);
       setError(null);
       const response = await equipmentApi.getAll();
-      const mappedEquipments = mapEquipmentsToUI(response.data.data);
+      const mappedEquipments = mapEquipmentsToUI(response.data.data || response.data);
       setEquipments(mappedEquipments);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar equipos';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar equipos';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -41,15 +42,22 @@ export const useEquipments = () => {
   const createEquipment = async (data: Omit<EquipmentUI, 'id'>) => {
     try {
       setLoading(true);
-      // TODO: Obtener IDs reales de cliente, modalidad y fabricante
-      const apiData = mapEquipmentToAPI(data, 1, 1, 1);
+      
+      // Obtener IDs reales desde los catálogos
+      // Si los datos vienen como strings (nombres), usar ID por defecto
+      // Si vienen como números, usarlos directamente
+      const clienteId = typeof data.cliente === 'string' ? 1 : (parseInt(data.cliente) || 1);
+      const modalidadId = typeof data.modalidad === 'string' ? 1 : (parseInt(data.modalidad) || 1);
+      const fabricanteId = typeof data.fabricante === 'string' ? 1 : (parseInt(data.fabricante) || 1);
+      
+      const apiData = mapEquipmentToAPI(data, clienteId, modalidadId, fabricanteId);
       const response = await equipmentApi.create(apiData as any);
-      const mappedEquipment = mapEquipmentToUI(response.data.data);
+      const mappedEquipment = mapEquipmentToUI(response.data.data || response.data);
       setEquipments([...equipments, mappedEquipment]);
       showToast.success('Equipo creado exitosamente');
       return mappedEquipment;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al crear equipo';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al crear equipo';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -62,12 +70,12 @@ export const useEquipments = () => {
       setLoading(true);
       const apiData = mapEquipmentToAPI(data);
       const response = await equipmentApi.update(parseInt(id), apiData);
-      const mappedEquipment = mapEquipmentToUI(response.data.data);
+      const mappedEquipment = mapEquipmentToUI(response.data.data || response.data);
       setEquipments(equipments.map(eq => eq.id === id ? mappedEquipment : eq));
       showToast.success('Equipo actualizado exitosamente');
       return mappedEquipment;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al actualizar equipo';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar equipo';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -81,8 +89,8 @@ export const useEquipments = () => {
       await equipmentApi.delete(parseInt(id));
       setEquipments(equipments.filter(eq => eq.id !== id));
       showToast.success('Equipo eliminado exitosamente');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al eliminar equipo';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar equipo';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -94,6 +102,7 @@ export const useEquipments = () => {
     if (equipments.length === 0) {
       fetchEquipments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -116,10 +125,10 @@ export const useClients = () => {
       setLoading(true);
       setError(null);
       const response = await clientApi.getAll();
-      const mappedClients = mapClientsToUI(response.data.data);
+      const mappedClients = mapClientsToUI(response.data.data || response.data);
       setClients(mappedClients);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar clientes';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar clientes';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -132,12 +141,12 @@ export const useClients = () => {
       setLoading(true);
       const apiData = mapClientToAPI(data);
       const response = await clientApi.create(apiData as any);
-      const mappedClient = mapClientToUI(response.data.data);
+      const mappedClient = mapClientToUI(response.data.data || response.data);
       setClients([...clients, mappedClient]);
       showToast.success('Cliente creado exitosamente');
       return mappedClient;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al crear cliente';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al crear cliente';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -150,12 +159,12 @@ export const useClients = () => {
       setLoading(true);
       const apiData = mapClientToAPI(data);
       const response = await clientApi.update(parseInt(id), apiData);
-      const mappedClient = mapClientToUI(response.data.data);
+      const mappedClient = mapClientToUI(response.data.data || response.data);
       setClients(clients.map(cl => cl.id === id ? mappedClient : cl));
       showToast.success('Cliente actualizado exitosamente');
       return mappedClient;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al actualizar cliente';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar cliente';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -169,8 +178,8 @@ export const useClients = () => {
       await clientApi.delete(parseInt(id));
       setClients(clients.filter(cl => cl.id !== id));
       showToast.success('Cliente eliminado exitosamente');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al eliminar cliente';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar cliente';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -182,6 +191,7 @@ export const useClients = () => {
     if (clients.length === 0) {
       fetchClients();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -204,10 +214,10 @@ export const useOrders = () => {
       setLoading(true);
       setError(null);
       const response = await orderApi.getAll();
-      const mappedOrders = mapOrdersToUI(response.data.data);
+      const mappedOrders = mapOrdersToUI(response.data.data || response.data);
       setOrders(mappedOrders);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar órdenes';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar órdenes';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -218,15 +228,20 @@ export const useOrders = () => {
   const createOrder = async (data: Omit<OrderUI, 'id'>) => {
     try {
       setLoading(true);
-      // TODO: Obtener IDs reales de equipo y cliente
-      const apiData = mapOrderToAPI(data, 1, 1);
+      
+      // Obtener IDs reales desde los datos
+      // Por ahora usamos valores por defecto, pero esto debería venir del formulario
+      const equipoId = 1; // Este ID debería venir del selector de equipos en el formulario
+      const clienteId = 1; // Este ID debería venir del selector de clientes en el formulario
+      
+      const apiData = mapOrderToAPI(data, equipoId, clienteId);
       const response = await orderApi.create(apiData as any);
-      const mappedOrder = mapOrderToUI(response.data.data);
+      const mappedOrder = mapOrderToUI(response.data.data || response.data);
       setOrders([...orders, mappedOrder]);
       showToast.success('Orden creada exitosamente');
       return mappedOrder;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al crear orden';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al crear orden';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -239,12 +254,12 @@ export const useOrders = () => {
       setLoading(true);
       const apiData = mapOrderToAPI(data);
       const response = await orderApi.update(parseInt(id), apiData);
-      const mappedOrder = mapOrderToUI(response.data.data);
+      const mappedOrder = mapOrderToUI(response.data.data || response.data);
       setOrders(orders.map(or => or.id === id ? mappedOrder : or));
       showToast.success('Orden actualizada exitosamente');
       return mappedOrder;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al actualizar orden';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar orden';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -258,8 +273,8 @@ export const useOrders = () => {
       await orderApi.delete(parseInt(id));
       setOrders(orders.filter(or => or.id !== id));
       showToast.success('Orden eliminada exitosamente');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al eliminar orden';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar orden';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -271,6 +286,7 @@ export const useOrders = () => {
     if (orders.length === 0) {
       fetchOrders();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -301,8 +317,8 @@ export const useAsyncOperation = () => {
         showToast.success(successMessage);
       }
       return result;
-    } catch (err: any) {
-      const message = errorMessage || err.response?.data?.message || 'Error en la operación';
+    } catch (err) {
+      const message = errorMessage || getErrorMessage(err) || 'Error en la operación';
       setError(message);
       showToast.error(message);
       return null;

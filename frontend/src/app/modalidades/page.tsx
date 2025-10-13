@@ -39,7 +39,8 @@ export default function ModalidadesPage() {
     try {
       setIsLoading(true);
       const response = await modalidadApi.getAll();
-      setModalidades(response.data.data);
+      const data = response.data.data || response.data;
+      setModalidades(data);
     } catch (error) {
       showToast.error('Error al cargar modalidades');
     } finally {
@@ -62,12 +63,14 @@ export default function ModalidadesPage() {
     try {
       if (modalType === 'create') {
         const response = await modalidadApi.create(data);
-        setModalidades([...modalidades, response.data.data]);
+        const newModalidad = response.data.data || response.data;
+        setModalidades([...modalidades, newModalidad]);
         showToast.success('Modalidad creada exitosamente');
       } else if (selectedModalidad) {
         const response = await modalidadApi.update(selectedModalidad.modalidad_id, data);
+        const updatedModalidad = response.data.data || response.data;
         setModalidades(modalidades.map(m => 
-          m.modalidad_id === selectedModalidad.modalidad_id ? response.data.data : m
+          m.modalidad_id === selectedModalidad.modalidad_id ? updatedModalidad : m
         ));
         showToast.success('Modalidad actualizada exitosamente');
       }

@@ -60,6 +60,12 @@ const Equipo = sequelize.define('equipo', {
   fecha_instalacion: {
     type: DataTypes.DATEONLY
   },
+  ultima_calibracion: {
+    type: DataTypes.DATEONLY
+  },
+  proxima_calibracion: {
+    type: DataTypes.DATEONLY
+  },
   estado_equipo: {
     type: DataTypes.TEXT,
     validate: {

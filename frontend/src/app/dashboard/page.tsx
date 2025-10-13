@@ -25,17 +25,21 @@ export default function DashboardPage() {
         const statsResponse = await dashboardApi.getEstadisticas();
         
         // Mapear las estadísticas del backend al formato esperado
+        const statsData = statsResponse.data.data || statsResponse.data;
         const mappedStats = {
-          totalEquipments: statsResponse.data.data?.totalEquipos || 0,
-          openOrders: statsResponse.data.data?.ordenesAbiertas || 0,
-          maintenanceEquipments: statsResponse.data.data?.equiposMantenimiento || 0,
-          operativeEquipments: statsResponse.data.data?.equiposOperativos || 0,
+          totalEquipments: statsData?.totalEquipos || 0,
+          openOrders: statsData?.ordenesAbiertas || 0,
+          maintenanceEquipments: statsData?.equiposMantenimiento || 0,
+          operativeEquipments: statsData?.equiposOperativos || 0,
         };
 
         setStats(mappedStats);
-        // TODO: Implementar endpoint de actividad reciente en el backend
-        setRecentActivity([]);
-      } catch (error: any) {
+        
+        // Cargar actividad reciente
+        const activityResponse = await dashboardApi.getActividadReciente();
+        const activityData = activityResponse.data.data || activityResponse.data;
+        setRecentActivity(activityData || []);
+      } catch (error) {
         console.error('Error loading dashboard data:', error);
         showToast.error('Error al cargar estadísticas del dashboard');
         // Datos de fallback
@@ -45,6 +49,7 @@ export default function DashboardPage() {
           maintenanceEquipments: 0,
           operativeEquipments: 0,
         });
+        setRecentActivity([]);
       } finally {
         setIsLoading(false);
       }
@@ -60,7 +65,7 @@ export default function DashboardPage() {
           <div className="h-10 w-64 bg-gray-200 rounded animate-pulse" />
           <div className="h-6 w-96 bg-gray-200 rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-32 bg-gray-200 rounded animate-pulse" />
           ))}
@@ -83,7 +88,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md-grid-cols-2 lg-grid-cols-4 gap-6 animate-slide-up">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
         {stats && [
           {
             title: 'Total Equipos',

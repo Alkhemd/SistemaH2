@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { modalidadApi, fabricanteApi, tecnicoApi } from '@/lib/api';
 import { showToast } from '@/components/ui/Toast';
 import { mapModalidadToUI, mapFabricanteToUI, mapTecnicoToUI } from '@/lib/mappers';
+import { getErrorMessage } from '@/types/errors';
 
 // ============================================================================
 // HOOK PARA MODALIDADES
@@ -19,10 +20,11 @@ export const useModalidades = () => {
       setIsLoading(true);
       setError(null);
       const response = await modalidadApi.getAll();
-      const mapped = response.data.data.map(mapModalidadToUI);
+      const data = response.data.data || response.data;
+      const mapped = data.map(mapModalidadToUI);
       setModalidades(mapped);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar modalidades';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar modalidades';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -34,12 +36,13 @@ export const useModalidades = () => {
     try {
       setIsLoading(true);
       const response = await modalidadApi.create(data);
-      const mapped = mapModalidadToUI(response.data.data);
+      const responseData = response.data.data || response.data;
+      const mapped = mapModalidadToUI(responseData);
       setModalidades([...modalidades, mapped]);
       showToast.success('Modalidad creada exitosamente');
       return mapped;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al crear modalidad';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al crear modalidad';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -51,12 +54,13 @@ export const useModalidades = () => {
     try {
       setIsLoading(true);
       const response = await modalidadApi.update(id, data);
-      const mapped = mapModalidadToUI(response.data.data);
+      const responseData = response.data.data || response.data;
+      const mapped = mapModalidadToUI(responseData);
       setModalidades(modalidades.map(m => m.id === id.toString() ? mapped : m));
       showToast.success('Modalidad actualizada exitosamente');
       return mapped;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al actualizar modalidad';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar modalidad';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -70,8 +74,8 @@ export const useModalidades = () => {
       await modalidadApi.delete(id);
       setModalidades(modalidades.filter(m => m.id !== id.toString()));
       showToast.success('Modalidad eliminada exitosamente');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al eliminar modalidad';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar modalidad';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -83,6 +87,7 @@ export const useModalidades = () => {
     if (modalidades.length === 0) {
       fetchModalidades();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -110,10 +115,11 @@ export const useFabricantes = () => {
       setIsLoading(true);
       setError(null);
       const response = await fabricanteApi.getAll();
-      const mapped = response.data.data.map(mapFabricanteToUI);
+      const data = response.data.data || response.data;
+      const mapped = data.map(mapFabricanteToUI);
       setFabricantes(mapped);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar fabricantes';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar fabricantes';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -125,12 +131,13 @@ export const useFabricantes = () => {
     try {
       setIsLoading(true);
       const response = await fabricanteApi.create(data);
-      const mapped = mapFabricanteToUI(response.data.data);
+      const responseData = response.data.data || response.data;
+      const mapped = mapFabricanteToUI(responseData);
       setFabricantes([...fabricantes, mapped]);
       showToast.success('Fabricante creado exitosamente');
       return mapped;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al crear fabricante';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al crear fabricante';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -142,12 +149,13 @@ export const useFabricantes = () => {
     try {
       setIsLoading(true);
       const response = await fabricanteApi.update(id, data);
-      const mapped = mapFabricanteToUI(response.data.data);
+      const responseData = response.data.data || response.data;
+      const mapped = mapFabricanteToUI(responseData);
       setFabricantes(fabricantes.map(f => f.id === id.toString() ? mapped : f));
       showToast.success('Fabricante actualizado exitosamente');
       return mapped;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al actualizar fabricante';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar fabricante';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -161,8 +169,8 @@ export const useFabricantes = () => {
       await fabricanteApi.delete(id);
       setFabricantes(fabricantes.filter(f => f.id !== id.toString()));
       showToast.success('Fabricante eliminado exitosamente');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al eliminar fabricante';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar fabricante';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -174,6 +182,7 @@ export const useFabricantes = () => {
     if (fabricantes.length === 0) {
       fetchFabricantes();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -201,10 +210,11 @@ export const useTecnicos = () => {
       setIsLoading(true);
       setError(null);
       const response = await tecnicoApi.getAll();
-      const mapped = response.data.data.map(mapTecnicoToUI);
+      const data = response.data.data || response.data;
+      const mapped = data.map(mapTecnicoToUI);
       setTecnicos(mapped);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar técnicos';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar técnicos';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -214,7 +224,7 @@ export const useTecnicos = () => {
 
   const createTecnico = async (data: {
     nombre: string;
-    especialidad?: string;
+    especialidad?: 'XR' | 'CT' | 'MR' | 'US' | 'MG' | 'PET/CT' | 'Multi-mod' | 'DEXA' | 'RF' | 'CATH';
     certificaciones?: string;
     telefono?: string;
     email?: string;
@@ -223,13 +233,14 @@ export const useTecnicos = () => {
   }) => {
     try {
       setIsLoading(true);
-      const response = await tecnicoApi.create(data);
-      const mapped = mapTecnicoToUI(response.data.data);
+      const response = await tecnicoApi.create(data as any);
+      const responseData = response.data.data || response.data;
+      const mapped = mapTecnicoToUI(responseData);
       setTecnicos([...tecnicos, mapped]);
       showToast.success('Técnico creado exitosamente');
       return mapped;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al crear técnico';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al crear técnico';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -239,7 +250,7 @@ export const useTecnicos = () => {
 
   const updateTecnico = async (id: number, data: Partial<{
     nombre: string;
-    especialidad?: string;
+    especialidad?: 'XR' | 'CT' | 'MR' | 'US' | 'MG' | 'PET/CT' | 'Multi-mod' | 'DEXA' | 'RF' | 'CATH';
     certificaciones?: string;
     telefono?: string;
     email?: string;
@@ -248,13 +259,14 @@ export const useTecnicos = () => {
   }>) => {
     try {
       setIsLoading(true);
-      const response = await tecnicoApi.update(id, data);
-      const mapped = mapTecnicoToUI(response.data.data);
+      const response = await tecnicoApi.update(id, data as any);
+      const responseData = response.data.data || response.data;
+      const mapped = mapTecnicoToUI(responseData);
       setTecnicos(tecnicos.map(t => t.id === id.toString() ? mapped : t));
       showToast.success('Técnico actualizado exitosamente');
       return mapped;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al actualizar técnico';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar técnico';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -268,8 +280,8 @@ export const useTecnicos = () => {
       await tecnicoApi.delete(id);
       setTecnicos(tecnicos.filter(t => t.id !== id.toString()));
       showToast.success('Técnico eliminado exitosamente');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al eliminar técnico';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar técnico';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -282,10 +294,11 @@ export const useTecnicos = () => {
       setIsLoading(true);
       setError(null);
       const response = await tecnicoApi.getActivos();
-      const mapped = response.data.data.map(mapTecnicoToUI);
+      const data = response.data.data || response.data;
+      const mapped = data.map(mapTecnicoToUI);
       setTecnicos(mapped);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cargar técnicos activos';
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar técnicos activos';
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {
@@ -297,6 +310,7 @@ export const useTecnicos = () => {
     if (tecnicos.length === 0) {
       fetchTecnicos();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

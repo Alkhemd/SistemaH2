@@ -154,7 +154,7 @@ interface ApiResponse<T> {
 
 // API Services actualizados
 export const equipmentApi = {
-  getAll: () => api.get<ApiResponse<Equipment[]>>('/equipos'),
+  getAll: (params?: { page?: number; limit?: number }) => api.get<ApiResponse<Equipment[]>>('/equipos', { params: { limit: 1000, ...params } }),
   getById: (id: number) => api.get<ApiResponse<Equipment>>(`/equipos/${id}`),
   create: (data: Omit<Equipment, 'equipo_id'>) => api.post<ApiResponse<Equipment>>('/equipos', data),
   update: (id: number, data: Partial<Equipment>) => api.put<ApiResponse<Equipment>>(`/equipos/${id}`, data),
@@ -165,7 +165,7 @@ export const equipmentApi = {
 };
 
 export const clientApi = {
-  getAll: () => api.get<ApiResponse<Client[]>>('/clientes'),
+  getAll: (params?: { page?: number; limit?: number }) => api.get<ApiResponse<Client[]>>('/clientes', { params: { limit: 1000, ...params } }),
   getById: (id: number) => api.get<ApiResponse<Client>>(`/clientes/${id}`),
   create: (data: Omit<Client, 'cliente_id'>) => api.post<ApiResponse<Client>>('/clientes', data),
   update: (id: number, data: Partial<Client>) => api.put<ApiResponse<Client>>(`/clientes/${id}`, data),
@@ -175,7 +175,7 @@ export const clientApi = {
 };
 
 export const orderApi = {
-  getAll: () => api.get<ApiResponse<Order[]>>('/ordenes'),
+  getAll: (params?: { page?: number; limit?: number }) => api.get<ApiResponse<Order[]>>('/ordenes', { params: { limit: 1000, ...params } }),
   getById: (id: number) => api.get<ApiResponse<Order>>(`/ordenes/${id}`),
   create: (data: Omit<Order, 'orden_id'>) => api.post<ApiResponse<Order>>('/ordenes', data),
   update: (id: number, data: Partial<Order>) => api.put<ApiResponse<Order>>(`/ordenes/${id}`, data),
@@ -186,7 +186,7 @@ export const orderApi = {
 
 // Nuevos servicios para catálogos
 export const modalidadApi = {
-  getAll: () => api.get<ApiResponse<Modalidad[]>>('/modalidades'),
+  getAll: (params?: { page?: number; limit?: number }) => api.get<ApiResponse<Modalidad[]>>('/modalidades', { params: { limit: 1000, ...params } }),
   getById: (id: number) => api.get<ApiResponse<Modalidad>>(`/modalidades/${id}`),
   create: (data: Omit<Modalidad, 'modalidad_id'>) => api.post<ApiResponse<Modalidad>>('/modalidades', data),
   update: (id: number, data: Partial<Modalidad>) => api.put<ApiResponse<Modalidad>>(`/modalidades/${id}`, data),
@@ -194,7 +194,7 @@ export const modalidadApi = {
 };
 
 export const fabricanteApi = {
-  getAll: () => api.get<ApiResponse<Fabricante[]>>('/fabricantes'),
+  getAll: (params?: { page?: number; limit?: number }) => api.get<ApiResponse<Fabricante[]>>('/fabricantes', { params: { limit: 1000, ...params } }),
   getById: (id: number) => api.get<ApiResponse<Fabricante>>(`/fabricantes/${id}`),
   create: (data: Omit<Fabricante, 'fabricante_id'>) => api.post<ApiResponse<Fabricante>>('/fabricantes', data),
   update: (id: number, data: Partial<Fabricante>) => api.put<ApiResponse<Fabricante>>(`/fabricantes/${id}`, data),
@@ -202,7 +202,7 @@ export const fabricanteApi = {
 };
 
 export const tecnicoApi = {
-  getAll: () => api.get<ApiResponse<Tecnico[]>>('/tecnicos'),
+  getAll: (params?: { page?: number; limit?: number }) => api.get<ApiResponse<Tecnico[]>>('/tecnicos', { params: { limit: 1000, ...params } }),
   getById: (id: number) => api.get<ApiResponse<Tecnico>>(`/tecnicos/${id}`),
   create: (data: Omit<Tecnico, 'tecnico_id'>) => api.post<ApiResponse<Tecnico>>('/tecnicos', data),
   update: (id: number, data: Partial<Tecnico>) => api.put<ApiResponse<Tecnico>>(`/tecnicos/${id}`, data),
@@ -213,6 +213,8 @@ export const tecnicoApi = {
 // Dashboard API
 export const dashboardApi = {
   getEstadisticas: () => api.get<ApiResponse<any>>('/dashboard/estadisticas'),
+  getActividadReciente: (limit?: number) => api.get<ApiResponse<any>>('/dashboard/actividad-reciente', { params: { limit } }),
+  getResumen: () => api.get<ApiResponse<any>>('/dashboard/resumen'),
 };
 
 export default api;

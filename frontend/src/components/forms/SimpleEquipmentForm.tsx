@@ -17,6 +17,9 @@ const equipmentSchema = z.object({
   cliente: z.string().min(1, 'El cliente es requerido'),
   estado: z.enum(['operativo', 'mantenimiento', 'fuera-servicio']),
   ubicacion: z.string().min(1, 'La ubicación es requerida'),
+  fechaInstalacion: z.string().min(1, 'La fecha de instalación es requerida'),
+  ultimaCalibacion: z.string().min(1, 'La fecha de última calibración es requerida'),
+  proximaCalibacion: z.string().min(1, 'La fecha de próxima calibración es requerida'),
 });
 
 type EquipmentFormData = z.infer<typeof equipmentSchema>;
@@ -45,7 +48,10 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
       modalidad: '',
       cliente: '',
       estado: 'operativo',
-      ubicacion: ''
+      ubicacion: '',
+      fechaInstalacion: new Date().toISOString().split('T')[0],
+      ultimaCalibacion: new Date().toISOString().split('T')[0],
+      proximaCalibacion: new Date().toISOString().split('T')[0],
     }
   });
 
@@ -172,6 +178,36 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
           error={errors.ubicacion?.message}
           placeholder="Ej: Sala de Tomografía - Piso 2"
         />
+
+        {/* Fechas Importantes */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+            📅 Fechas Importantes
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Input
+              label="Fecha de Instalación"
+              type="date"
+              {...register('fechaInstalacion')}
+              error={errors.fechaInstalacion?.message}
+            />
+            
+            <Input
+              label="Última Calibración"
+              type="date"
+              {...register('ultimaCalibacion')}
+              error={errors.ultimaCalibacion?.message}
+            />
+            
+            <Input
+              label="Próxima Calibración"
+              type="date"
+              {...register('proximaCalibacion')}
+              error={errors.proximaCalibacion?.message}
+            />
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">

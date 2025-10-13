@@ -29,8 +29,8 @@ export function mapEquipmentToUI(equipment: Equipment): EquipmentUI {
     estado: mapEstadoEquipoToUI(equipment.estado_equipo || equipment.estado || 'Operativo'),
     ubicacion: equipment.ubicacion || '',
     fechaInstalacion: equipment.fecha_instalacion || equipment.fechaInstalacion || new Date().toISOString().split('T')[0],
-    ultimaCalibacion: equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
-    proximaCalibacion: equipment.proximaCalibacion || new Date().toISOString().split('T')[0],
+    ultimaCalibacion: (equipment as any).ultima_calibracion || equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
+    proximaCalibacion: (equipment as any).proxima_calibracion || equipment.proximaCalibacion || new Date().toISOString().split('T')[0],
   };
 }
 
@@ -47,7 +47,9 @@ export function mapEquipmentToAPI(equipment: Partial<EquipmentUI>, clienteId?: n
     estado_equipo: mapEstadoEquipoToAPI(equipment.estado || 'operativo'),
     ubicacion: equipment.ubicacion,
     fecha_instalacion: equipment.fechaInstalacion,
-  };
+    ultima_calibracion: equipment.ultimaCalibacion,
+    proxima_calibracion: equipment.proximaCalibacion,
+  } as any;
 }
 
 /**
