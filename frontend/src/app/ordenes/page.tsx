@@ -20,11 +20,10 @@ import {
   X,
   FileText
 } from 'lucide-react';
-import { ordenesService, CreateOrdenData, Orden } from '@/services/ordenesService';
-import { equiposService, Equipo } from '@/services/equiposService';
-import { clientesService, Cliente } from '@/services/clientesService';
-import { tecnicosService, Tecnico } from '@/services/tecnicosService';
-import toast from 'react-hot-toast';
+import { useOrders } from '@/hooks/useApi';
+import { useEquipments, useClients } from '@/hooks/useApi';
+import { useTecnicos } from '@/hooks/useCatalogs';
+import { showToast } from '@/components/ui/Toast';
 
 interface Order {
   id: string;
@@ -44,92 +43,14 @@ interface Order {
   tiempoEstimado: string;
 }
 
-// Mock data
-const mockOrders: Order[] = [
-  {
-    id: 'ORD-2401',
-    equipo: {
-      modelo: 'CT-1 GE Discovery',
-      numeroSerie: '12345ABC',
-      fabricante: 'GE Healthcare'
-    },
-    cliente: 'Hospital San José',
-    prioridad: 'critica',
-    estado: 'abierta',
-    tipo: 'correctivo',
-    titulo: 'Falla en sistema de enfriamiento',
-    fechaCreacion: '08 Oct 2024',
-    fechaVencimiento: '09 Oct 2024',
-    tecnico: 'Juan Pérez',
-    tiempoEstimado: '4 horas'
-  },
-  {
-    id: 'ORD-2402',
-    equipo: {
-      modelo: 'MRI-5 Siemens',
-      numeroSerie: '67890DEF',
-      fabricante: 'Siemens'
-    },
-    cliente: 'Hospital Sureste',
-    prioridad: 'alta',
-    estado: 'proceso',
-    tipo: 'preventivo',
-    titulo: 'Mantenimiento preventivo trimestral',
-    fechaCreacion: '07 Oct 2024',
-    tecnico: 'María González',
-    tiempoEstimado: '2 horas'
-  },
-  {
-    id: 'ORD-2403',
-    equipo: {
-      modelo: 'XR-12 Philips',
-      numeroSerie: '11111GHI',
-      fabricante: 'Philips'
-    },
-    cliente: 'Clínica Norte',
-    prioridad: 'normal',
-    estado: 'cerrada',
-    tipo: 'calibracion',
-    titulo: 'Calibración anual de precisión',
-    fechaCreacion: '05 Oct 2024',
-    tecnico: 'Carlos Ruiz',
-    tiempoEstimado: '6 horas'
-  },
-  {
-    id: 'ORD-2404',
-    equipo: {
-      modelo: 'US-8 Samsung',
-      numeroSerie: '22222JKL',
-      fabricante: 'Samsung'
-    },
-    cliente: 'Hospital San José',
-    prioridad: 'alta',
-    estado: 'abierta',
-    tipo: 'correctivo',
-    titulo: 'Problema en transductor principal',
-    fechaCreacion: '06 Oct 2024',
-    fechaVencimiento: '08 Oct 2024',
-    tiempoEstimado: '3 horas'
-  },
-  {
-    id: 'ORD-2405',
-    equipo: {
-      modelo: 'CT-3 GE Revolution',
-      numeroSerie: '33333MNO',
-      fabricante: 'GE Healthcare'
-    },
-    cliente: 'Clínica del Valle',
-    prioridad: 'normal',
-    estado: 'proceso',
-    tipo: 'preventivo',
-    titulo: 'Mantenimiento mensual programado',
-    fechaCreacion: '04 Oct 2024',
-    tecnico: 'Ana López',
-    tiempoEstimado: '1.5 horas'
-  }
-];
-
 export default function OrdenesPage() {
+  // Hooks para datos del API
+  const { orders, createOrder, updateOrder, deleteOrder } = useOrders();
+  const { equipments } = useEquipments();
+  const { clients } = useClients();
+  const { tecnicos } = useTecnicos();
+  
+  // Estados locales
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPrioridad, setSelectedPrioridad] = useState<string>('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
@@ -138,32 +59,20 @@ export default function OrdenesPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  
-  // Estados para datos del backend
-  const [ordenes, setOrdenes] = useState<Order[]>([]);
-  const [equipos, setEquipos] = useState<Equipo[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingOrdenes, setIsLoadingOrdenes] = useState(true);
   
   // Estado del formulario
-  const [formData, setFormData] = useState<CreateOrdenData>({
+  const [formData, setFormData] = useState({
     equipo_id: 0,
     cliente_id: 0,
-    tipo: 'correctivo',
-    prioridad: 'normal',
+    tipo: 'correctivo' as 'correctivo' | 'preventivo' | 'calibracion',
+    prioridad: 'normal' as 'critica' | 'alta' | 'normal',
     titulo: '',
     descripcion: '',
-    tecnico_id: undefined,
+    tecnico_id: undefined as number | undefined,
     fecha_vencimiento: '',
     tiempo_estimado: ''
   });
-
-  // Cargar órdenes al montar el componente
-  useEffect(() => {
-    loadOrdenes();
-  }, []);
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -177,48 +86,9 @@ export default function OrdenesPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openMenuId]);
 
-  // Cargar datos al abrir el modal
-  useEffect(() => {
-    if (isModalOpen) {
-      loadFormData();
-    }
-  }, [isModalOpen]);
-
-  const loadOrdenes = async () => {
-    try {
-      setIsLoadingOrdenes(true);
-      // Por ahora usamos mock data, pero aquí iría la llamada al backend
-      // const response = await ordenesService.getAll({ limit: 100 });
-      setOrdenes(mockOrders);
-    } catch (error) {
-      console.error('Error al cargar órdenes:', error);
-      toast.error('Error al cargar las órdenes');
-      setOrdenes(mockOrders); // Fallback a mock data
-    } finally {
-      setIsLoadingOrdenes(false);
-    }
-  };
-
-  const loadFormData = async () => {
-    try {
-      const [equiposRes, clientesRes, tecnicosRes] = await Promise.all([
-        equiposService.getAll({ limit: 100 }),
-        clientesService.getAll({ limit: 100 }),
-        tecnicosService.getAll({ limit: 100 })
-      ]);
-      
-      setEquipos(equiposRes.data || []);
-      setClientes(clientesRes.data || []);
-      setTecnicos(tecnicosRes.data || []);
-    } catch (error) {
-      console.error('Error al cargar datos:', error);
-      toast.error('Error al cargar los datos del formulario');
-    }
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: name.includes('_id') ? (value ? parseInt(value) : 0) : value
     }));
@@ -229,30 +99,32 @@ export default function OrdenesPage() {
     
     // Validaciones
     if (!formData.equipo_id || formData.equipo_id === 0) {
-      toast.error('Selecciona un equipo');
+      showToast.error('Selecciona un equipo');
       return;
     }
     if (!formData.cliente_id || formData.cliente_id === 0) {
-      toast.error('Selecciona un cliente');
+      showToast.error('Selecciona un cliente');
       return;
     }
     if (!formData.titulo.trim()) {
-      toast.error('Ingresa un título');
-      return;
-    }
-    if (!formData.tipo) {
-      toast.error('Selecciona un tipo de orden');
-      return;
-    }
-    if (!formData.prioridad) {
-      toast.error('Selecciona una prioridad');
+      showToast.error('Ingresa un título');
       return;
     }
 
     setIsLoading(true);
     try {
-      await ordenesService.create(formData);
-      toast.success('¡Orden creada exitosamente!');
+      await createOrder({
+        tipo: formData.tipo,
+        prioridad: formData.prioridad,
+        titulo: formData.titulo,
+        descripcion: formData.descripcion,
+        fechaCreacion: new Date().toISOString().split('T')[0],
+        tiempoEstimado: formData.tiempo_estimado || '2 horas',
+        equipo: { modelo: '', numeroSerie: '', fabricante: '' },
+        cliente: '',
+        estado: 'abierta'
+      });
+      showToast.success('¡Orden creada exitosamente!');
       setIsModalOpen(false);
       // Resetear formulario
       setFormData({
@@ -266,11 +138,9 @@ export default function OrdenesPage() {
         fecha_vencimiento: '',
         tiempo_estimado: ''
       });
-      // Recargar lista de órdenes
-      loadOrdenes();
     } catch (error: any) {
       console.error('Error al crear orden:', error);
-      toast.error(error.response?.data?.message || 'Error al crear la orden');
+      showToast.error(error.response?.data?.message || 'Error al crear la orden');
     } finally {
       setIsLoading(false);
     }
@@ -283,12 +153,12 @@ export default function OrdenesPage() {
   };
 
   const handleEdit = (order: Order) => {
-    toast('Función de edición en desarrollo', { icon: 'ℹ️' });
+    showToast.loading('Función de edición en desarrollo');
     setOpenMenuId(null);
   };
 
   const handleChangeStatus = (order: Order) => {
-    toast('Función de cambio de estado en desarrollo', { icon: '🔄' });
+    showToast.loading('Función de cambio de estado en desarrollo');
     setOpenMenuId(null);
   };
 
@@ -298,13 +168,12 @@ export default function OrdenesPage() {
     }
     
     try {
-      // await ordenesService.delete(parseInt(order.id.split('-')[1]));
-      toast.success('Orden eliminada exitosamente');
-      loadOrdenes();
+      await deleteOrder(order.id);
+      showToast.success('Orden eliminada exitosamente');
       setOpenMenuId(null);
     } catch (error) {
       console.error('Error al eliminar orden:', error);
-      toast.error('Error al eliminar la orden');
+      showToast.error('Error al eliminar la orden');
     }
   };
 
@@ -313,12 +182,12 @@ export default function OrdenesPage() {
   };
 
   const filteredOrders = useMemo(() => {
-    return ordenes.filter(order => {
+    return orders.filter((order: Order) => {
       const matchesSearch = searchTerm === '' || 
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.equipo.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+        order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.equipo?.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.titulo?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesPrioridad = selectedPrioridad === '' || order.prioridad === selectedPrioridad;
       const matchesEstado = selectedEstado === '' || order.estado === selectedEstado;
@@ -326,7 +195,7 @@ export default function OrdenesPage() {
 
       return matchesSearch && matchesPrioridad && matchesEstado && matchesTipo;
     });
-  }, [ordenes, searchTerm, selectedPrioridad, selectedEstado, selectedTipo]);
+  }, [orders, searchTerm, selectedPrioridad, selectedEstado, selectedTipo]);
 
   const getPriorityIcon = (prioridad: Order['prioridad']) => {
     switch (prioridad) {
@@ -496,9 +365,9 @@ export default function OrdenesPage() {
         <span>
           {filteredOrders.length} órdenes encontradas
         </span>
-        {filteredOrders.length !== ordenes.length && (
+        {filteredOrders.length !== orders.length && (
           <span>
-            de {ordenes.length} total
+            de {orders.length} total
           </span>
         )}
       </motion.div>
@@ -738,9 +607,9 @@ export default function OrdenesPage() {
                       required
                     >
                       <option value="0">Seleccionar equipo...</option>
-                      {equipos.map(equipo => (
+                      {equipments.map((equipo: any) => (
                         <option key={equipo.id} value={equipo.id}>
-                          {equipo.modelo} - {equipo.numero_serie}
+                          {equipo.modelo} - {equipo.numeroSerie}
                         </option>
                       ))}
                     </select>
@@ -757,7 +626,7 @@ export default function OrdenesPage() {
                       required
                     >
                       <option value="0">Seleccionar cliente...</option>
-                      {clientes.map(cliente => (
+                      {clients.map((cliente: any) => (
                         <option key={cliente.id} value={cliente.id}>
                           {cliente.nombre}
                         </option>

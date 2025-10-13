@@ -1,88 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BuildingOfficeIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { FabricanteForm } from '@/components/forms/FabricanteForm';
-
-// Mock data para fabricantes
-const mockFabricantes = [
-  {
-    id: '1',
-    nombre: 'General Electric Healthcare',
-    pais: 'Estados Unidos',
-    especialidades: ['CT', 'MR', 'US', 'XR'],
-    telefono: '+1-800-437-4449',
-    email: 'info@gehealthcare.com',
-    website: 'www.gehealthcare.com',
-    equiposCount: 15
-  },
-  {
-    id: '2',
-    nombre: 'Siemens Healthineers',
-    pais: 'Alemania',
-    especialidades: ['CT', 'MR', 'PET/CT', 'XR'],
-    telefono: '+49-9131-84-0',
-    email: 'info@siemens-healthineers.com',
-    website: 'www.siemens-healthineers.com',
-    equiposCount: 12
-  },
-  {
-    id: '3',
-    nombre: 'Philips Healthcare',
-    pais: 'Países Bajos',
-    especialidades: ['MR', 'CT', 'US', 'XR'],
-    telefono: '+31-40-27-91234',
-    email: 'info@philips.com',
-    website: 'www.philips.com/healthcare',
-    equiposCount: 8
-  }
-];
+import { useFabricantes } from '@/hooks/useCatalogs';
 
 export default function FabricantesPage() {
-  const [fabricantes, setFabricantes] = useState(mockFabricantes);
-  const [filteredFabricantes, setFilteredFabricantes] = useState(mockFabricantes);
+  const { fabricantes, isLoading, createFabricante, updateFabricante, deleteFabricante } = useFabricantes();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedFabricante, setSelectedFabricante] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Manejar búsqueda
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    const filtered = fabricantes.filter(fabricante =>
-      fabricante.nombre.toLowerCase().includes(term.toLowerCase()) ||
-      fabricante.pais.toLowerCase().includes(term.toLowerCase()) ||
-      fabricante.especialidades.some(esp => esp.toLowerCase().includes(term.toLowerCase()))
+  // Filtrar fabricantes con useMemo para optimizar
+  const filteredFabricantes = useMemo(() => {
+    if (!searchTerm) return fabricantes;
+    
+    const term = searchTerm.toLowerCase();
+    return fabricantes.filter(fabricante =>
+      fabricante.nombre?.toLowerCase().includes(term) ||
+      fabricante.pais?.toLowerCase().includes(term)
     );
-    setFilteredFabricantes(filtered);
-  };
+  }, [fabricantes, searchTerm]);
 
   // Manejar creación
   const handleCreateFabricante = async (data: any) => {
-    const newFabricante = {
-      id: Date.now().toString(),
-      ...data,
-      equiposCount: 0
-    };
-    setFabricantes([...fabricantes, newFabricante]);
-    setFilteredFabricantes([...filteredFabricantes, newFabricante]);
-    setIsCreateModalOpen(false);
+    try {
+      await createFabricante({
+        nombre: data.nombre,
+        pais: data.pais,
+        soporte_tel: data.telefono,
+        web: data.website
+      });
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Error al crear fabricante:', error);
+    }
   };
 
   // Manejar edición
   const handleEditFabricante = async (data: any) => {
-    const updatedFabricantes = fabricantes.map(f =>
-      f.id === selectedFabricante?.id ? { ...f, ...data } : f
-    );
-    setFabricantes(updatedFabricantes);
-    setFilteredFabricantes(updatedFabricantes);
-    setIsEditModalOpen(false);
-    setSelectedFabricante(null);
+    if (!selectedFabricante) return;
+    
+    try {
+      await updateFabricante(parseInt(selectedFabricante.id), {
+        nombre: data.nombre,
+        pais: data.pais,
+        soporte_tel: data.telefono,
+        web: data.website
+      });
+      setIsEditModalOpen(false);
+      setSelectedFabricante(null);
+    } catch (error) {
+      console.error('Error al editar fabricante:', error);
+    }
   };
 
   const handleViewFabricante = (fabricante: any) => {
@@ -120,7 +96,7 @@ export default function FabricantesPage() {
             <Input
               placeholder="Buscar fabricantes..."
               value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10"
             />
           </div>
@@ -156,23 +132,14 @@ export default function FabricantesPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Especialidades:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {fabricante.especialidades.map((esp) => (
-                        <span
-                          key={esp}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium"
-                        >
-                          {esp}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>Teléfono:</span>
+                    <span className="font-medium">{fabricante.soporte_tel || 'N/A'}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Equipos registrados:</span>
-                    <span className="font-semibold">{fabricante.equiposCount}</span>
+                    <span>Website:</span>
+                    <span className="font-medium truncate ml-2">{fabricante.web || 'N/A'}</span>
                   </div>
                 </div>
 
@@ -266,34 +233,13 @@ export default function FabricantesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Teléfono
                 </label>
-                <p className="text-gray-900">{selectedFabricante.telefono}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <p className="text-gray-900">{selectedFabricante.email}</p>
+                <p className="text-gray-900">{selectedFabricante.soporte_tel || 'N/A'}</p>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Website
                 </label>
-                <p className="text-gray-900">{selectedFabricante.website}</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Especialidades
-                </label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedFabricante.especialidades.map((esp: string) => (
-                    <span
-                      key={esp}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                    >
-                      {esp}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-gray-900">{selectedFabricante.web || 'N/A'}</p>
               </div>
             </div>
 

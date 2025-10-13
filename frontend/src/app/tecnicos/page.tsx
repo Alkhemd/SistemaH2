@@ -1,49 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { TecnicoForm } from '@/components/forms/TecnicoForm';
-
-// Mock data para técnicos
-const mockTecnicos = [
-  {
-    id: '1',
-    nombre: 'Juan Carlos Mendoza',
-    especialidad: 'CT',
-    certificaciones: 'DICOM, PACS',
-    telefono: '+52-55-1234-5678',
-    email: 'juan.mendoza@hospital.com',
-    base_ciudad: 'Ciudad de México',
-    activo: true,
-    ordenes_asignadas: 5
-  },
-  {
-    id: '2',
-    nombre: 'María Elena Rodriguez',
-    especialidad: 'MR',
-    certificaciones: 'Resonancia Magnética Nivel 2',
-    telefono: '+52-33-8765-4321',
-    email: 'maria.rodriguez@hospital.com',
-    base_ciudad: 'Guadalajara',
-    activo: true,
-    ordenes_asignadas: 3
-  },
-  {
-    id: '3',
-    nombre: 'Roberto Silva',
-    especialidad: 'Multi-mod',
-    certificaciones: 'XR, US, CT',
-    telefono: '+52-81-5555-0123',
-    email: 'roberto.silva@hospital.com',
-    base_ciudad: 'Monterrey', 
-    activo: false,
-    ordenes_asignadas: 0
-  }
-];
+import { useTecnicos } from '@/hooks/useCatalogs';
 
 const especialidadLabels = {
   'XR': 'Rayos X',
@@ -59,46 +23,62 @@ const especialidadLabels = {
 };
 
 export default function TecnicosPage() {
-  const [tecnicos, setTecnicos] = useState(mockTecnicos);
-  const [filteredTecnicos, setFilteredTecnicos] = useState(mockTecnicos);
+  const { tecnicos, isLoading, createTecnico, updateTecnico, deleteTecnico } = useTecnicos();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTecnico, setSelectedTecnico] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Manejar búsqueda
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    const filtered = tecnicos.filter(tecnico =>
-      tecnico.nombre.toLowerCase().includes(term.toLowerCase()) ||
-      tecnico.especialidad?.toLowerCase().includes(term.toLowerCase()) ||
-      tecnico.base_ciudad?.toLowerCase().includes(term.toLowerCase())
+  // Filtrar técnicos con useMemo para optimizar
+  const filteredTecnicos = useMemo(() => {
+    if (!searchTerm) return tecnicos;
+    
+    const term = searchTerm.toLowerCase();
+    return tecnicos.filter(tecnico =>
+      tecnico.nombre?.toLowerCase().includes(term) ||
+      tecnico.especialidad?.toLowerCase().includes(term) ||
+      tecnico.base_ciudad?.toLowerCase().includes(term)
     );
-    setFilteredTecnicos(filtered);
-  };
+  }, [tecnicos, searchTerm]);
 
   // Manejar creación
   const handleCreateTecnico = async (data: any) => {
-    const newTecnico = {
-      id: Date.now().toString(),
-      ...data,
-      ordenes_asignadas: 0
-    };
-    setTecnicos([...tecnicos, newTecnico]);
-    setFilteredTecnicos([...filteredTecnicos, newTecnico]);
-    setIsCreateModalOpen(false);
+    try {
+      await createTecnico({
+        nombre: data.nombre,
+        especialidad: data.especialidad,
+        certificaciones: data.certificaciones,
+        telefono: data.telefono,
+        email: data.email,
+        base_ciudad: data.base_ciudad,
+        activo: data.activo ? 1 : 0
+      });
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Error al crear técnico:', error);
+    }
   };
 
   // Manejar edición
   const handleEditTecnico = async (data: any) => {
-    const updatedTecnicos = tecnicos.map(t =>
-      t.id === selectedTecnico?.id ? { ...t, ...data } : t
-    );
-    setTecnicos(updatedTecnicos);
-    setFilteredTecnicos(updatedTecnicos);
-    setIsEditModalOpen(false);
-    setSelectedTecnico(null);
+    if (!selectedTecnico) return;
+    
+    try {
+      await updateTecnico(parseInt(selectedTecnico.id), {
+        nombre: data.nombre,
+        especialidad: data.especialidad,
+        certificaciones: data.certificaciones,
+        telefono: data.telefono,
+        email: data.email,
+        base_ciudad: data.base_ciudad,
+        activo: data.activo ? 1 : 0
+      });
+      setIsEditModalOpen(false);
+      setSelectedTecnico(null);
+    } catch (error) {
+      console.error('Error al editar técnico:', error);
+    }
   };
 
   const handleViewTecnico = (tecnico: any) => {
@@ -134,7 +114,7 @@ export default function TecnicosPage() {
           <Input
             placeholder="Buscar técnicos..."
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
           />
         </div>
@@ -193,8 +173,8 @@ export default function TecnicosPage() {
                   )}
 
                   <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Órdenes asignadas:</span>
-                    <span className="font-semibold">{tecnico.ordenes_asignadas}</span>
+                    <span>Email:</span>
+                    <span className="font-semibold text-xs truncate ml-2">{tecnico.email || 'N/A'}</span>
                   </div>
                 </div>
 
