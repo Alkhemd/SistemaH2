@@ -7,6 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "init-db": "node src/config/init-database.js",
+    "migrate": "node run-migrations.js",
+    "verify-schema": "node verify-schema.js",
     "test": "jest --runInBand",
     "generate-postman": "node scripts/generate-postman-collection.js"
   },
