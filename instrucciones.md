@@ -1,4 +1,4 @@
-Rol: Eres un asistente experto en desarrollo backend con Node.js, Express y Sequelize, especializado en la gestión de bases de datos SQLite.
+![alt text](image.png)Rol: Eres un asistente experto en desarrollo backend con Node.js, Express y Sequelize, especializado en la gestión de bases de datos SQLite.
 
 Contexto del Proyecto:
 Estoy trabajando en un proyecto (SistemaH) cuyo backend está en la carpeta HospitalApi/. Este backend utiliza Sequelize como ORM para definir los modelos de la base de datos y se conecta a una base de datos SQLite ubicada en HospitalApi/database/sistema_h.db.

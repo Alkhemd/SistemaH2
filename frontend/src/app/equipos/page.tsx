@@ -389,7 +389,8 @@ export default function EquiposPage() {
           </div>
         ) : (
           <SimpleEquipmentForm
-            onSubmit={handleCreateEquipment}
+            equipment={modalType === 'edit' ? selectedEquipment : undefined}
+            onSubmit={modalType === 'edit' ? handleUpdateEquipment : handleCreateEquipment}
             onCancel={() => {
               setModal(false);
               setSelectedEquipment(null);

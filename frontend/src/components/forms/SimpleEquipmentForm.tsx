@@ -1,6 +1,11 @@
-'use client';
 
-import React from 'react';
+'use client';
+import { mapEstadoEquipoToUI } from '@/lib/mappers';
+
+import React, { useEffect, useState } from 'react';
+import { clientesService } from '@/services/clientesService';
+import { fabricantesService } from '@/services/fabricantesService';
+import { modalidadesService } from '@/services/modalidadesService';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,41 +17,66 @@ import { Input } from '@/components/ui/Input';
 const equipmentSchema = z.object({
   modelo: z.string().min(1, 'El modelo es requerido'),
   numeroSerie: z.string().min(1, 'El número de serie es requerido'),
-  fabricante: z.string().min(1, 'El fabricante es requerido'),
-  modalidad: z.string().min(1, 'La modalidad es requerida'),
-  cliente: z.string().min(1, 'El cliente es requerido'),
+  fabricante_id: z.number().int().positive('Selecciona un fabricante'),
+  modalidad_id: z.number().int().positive('Selecciona una modalidad'),
+  cliente_id: z.number().int().positive('Selecciona un cliente'),
   estado: z.enum(['operativo', 'mantenimiento', 'fuera-servicio']),
   ubicacion: z.string().min(1, 'La ubicación es requerida'),
-  fechaInstalacion: z.string().min(1, 'La fecha de instalación es requerida'),
-  ultimaCalibacion: z.string().min(1, 'La fecha de última calibración es requerida'),
-  proximaCalibacion: z.string().min(1, 'La fecha de próxima calibración es requerida'),
+  fechaInstalacion: z.string().optional(),
+  ultimaCalibacion: z.string().optional(),
+  proximaCalibacion: z.string().optional(),
 });
 
 type EquipmentFormData = z.infer<typeof equipmentSchema>;
 
+type CatalogOption = { fabricante_id?: number; nombre?: string; modalidad_id?: number; codigo?: string; descripcion?: string; cliente_id?: number };
+
 interface SimpleEquipmentFormProps {
+  equipment?: any; // Equipo a editar (opcional)
   onSubmit: (data: EquipmentFormData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
 export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
+  equipment,
   onSubmit,
   onCancel,
   isLoading = false
 }) => {
+  const [clientes, setClientes] = useState<CatalogOption[]>([]);
+  const [fabricantes, setFabricantes] = useState<CatalogOption[]>([]);
+  const [modalidades, setModalidades] = useState<CatalogOption[]>([]);
+
+  useEffect(() => {
+    clientesService.getAll().then(({ data }) => setClientes(data || []));
+    fabricantesService.getAll().then(({ data }) => setFabricantes(data || []));
+    modalidadesService.getAll().then(({ data }) => setModalidades(data || []));
+  }, []);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
   } = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
-    defaultValues: {
+    defaultValues: equipment ? {
+      modelo: equipment.modelo || '',
+      numeroSerie: equipment.numeroSerie || '',
+      fabricante_id: equipment.fabricante_id || 0,
+      modalidad_id: equipment.modalidad_id || 0,
+      cliente_id: equipment.cliente_id || 0,
+      estado: equipment.estado || 'operativo',
+      ubicacion: equipment.ubicacion || '',
+      fechaInstalacion: equipment.fechaInstalacion || new Date().toISOString().split('T')[0],
+      ultimaCalibacion: equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
+      proximaCalibacion: equipment.proximaCalibacion || new Date().toISOString().split('T')[0],
+    } : {
       modelo: '',
       numeroSerie: '',
-      fabricante: '',
-      modalidad: '',
-      cliente: '',
+      fabricante_id: 0,
+      modalidad_id: 0,
+      cliente_id: 0,
       estado: 'operativo',
       ubicacion: '',
       fechaInstalacion: new Date().toISOString().split('T')[0],
@@ -85,74 +115,65 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
               error={errors.modelo?.message}
               placeholder="Ej: GE Discovery CT750 HD"
             />
-            
             <Input
               label="Número de Serie"
               {...register('numeroSerie')}
               error={errors.numeroSerie?.message}
-              placeholder="Ej: CT750-2023-001"
+              placeholder="Ej: 123456789"
             />
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fabricante
               </label>
               <select
-                {...register('fabricante')}
+                {...register('fabricante_id', { valueAsNumber: true })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Seleccionar fabricante</option>
-                <option value="General Electric">General Electric</option>
-                <option value="Siemens">Siemens</option>
-                <option value="Philips">Philips</option>
-                <option value="Canon">Canon</option>
+                <option value={0}>Seleccionar fabricante</option>
+                {fabricantes.map(fab => (
+                  <option key={fab.fabricante_id} value={fab.fabricante_id}>{fab.nombre}</option>
+                ))}
               </select>
-              {errors.fabricante && (
-                <p className="text-red-500 text-sm mt-1">{errors.fabricante.message}</p>
+              {errors.fabricante_id && (
+                <p className="text-red-500 text-sm mt-1">{errors.fabricante_id.message}</p>
               )}
             </div>
           </div>
-
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Modalidad
               </label>
               <select
-                {...register('modalidad')}
+                {...register('modalidad_id', { valueAsNumber: true })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Seleccionar modalidad</option>
-                <option value="CT">Tomografía Computarizada (CT)</option>
-                <option value="MR">Resonancia Magnética (MR)</option>
-                <option value="XR">Rayos X (XR)</option>
-                <option value="US">Ultrasonido (US)</option>
-                <option value="MG">Mamografía (MG)</option>
+                <option value={0}>Seleccionar modalidad</option>
+                {modalidades.map(mod => (
+                  <option key={mod.modalidad_id} value={mod.modalidad_id}>{mod.codigo} - {mod.descripcion}</option>
+                ))}
               </select>
-              {errors.modalidad && (
-                <p className="text-red-500 text-sm mt-1">{errors.modalidad.message}</p>
+              {errors.modalidad_id && (
+                <p className="text-red-500 text-sm mt-1">{errors.modalidad_id.message}</p>
               )}
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cliente
               </label>
               <select
-                {...register('cliente')}
+                {...register('cliente_id', { valueAsNumber: true })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Seleccionar cliente</option>
-                <option value="Hospital General de México">Hospital General de México</option>
-                <option value="Hospital ABC">Hospital ABC</option>
-                <option value="Clínica San Rafael">Clínica San Rafael</option>
-                <option value="Centro Médico Nacional">Centro Médico Nacional</option>
+                <option value={0}>Seleccionar cliente</option>
+                {clientes.map(cli => (
+                  <option key={cli.cliente_id} value={cli.cliente_id}>{cli.nombre}</option>
+                ))}
               </select>
-              {errors.cliente && (
-                <p className="text-red-500 text-sm mt-1">{errors.cliente.message}</p>
+              {errors.cliente_id && (
+                <p className="text-red-500 text-sm mt-1">{errors.cliente_id.message}</p>
               )}
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Estado
@@ -171,20 +192,17 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
             </div>
           </div>
         </div>
-
         <Input
           label="Ubicación"
           {...register('ubicacion')}
           error={errors.ubicacion?.message}
           placeholder="Ej: Sala de Tomografía - Piso 2"
         />
-
         {/* Fechas Importantes */}
         <div className="space-y-4">
           <h4 className="font-medium text-gray-900 flex items-center gap-2">
             📅 Fechas Importantes
           </h4>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               label="Fecha de Instalación"
@@ -192,14 +210,12 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
               {...register('fechaInstalacion')}
               error={errors.fechaInstalacion?.message}
             />
-            
             <Input
               label="Última Calibración"
               type="date"
               {...register('ultimaCalibacion')}
               error={errors.ultimaCalibacion?.message}
             />
-            
             <Input
               label="Próxima Calibración"
               type="date"
@@ -208,7 +224,6 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
             />
           </div>
         </div>
-
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
           <Button

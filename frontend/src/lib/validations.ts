@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 // Validaciones base
-const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+// Acepta: +52 999-123-4567, 9991234567, +529991234567, (999) 123-4567
+const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,4}[-\s\.]?[0-9]{1,9}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Schema para equipos

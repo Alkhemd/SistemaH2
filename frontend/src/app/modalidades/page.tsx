@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
 import { ModalidadForm } from '@/components/forms/ModalidadForm';
-import { Modalidad, modalidadApi } from '@/lib/api';
+import { useModalidades } from '@/hooks/useCatalogs';
 import { showToast } from '@/components/ui/Toast';
 import { 
   MagnifyingGlassIcon,
@@ -15,40 +15,23 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ModalidadesPage() {
-  const [modalidades, setModalidades] = useState<Modalidad[]>([]);
-  const [filteredModalidades, setFilteredModalidades] = useState<Modalidad[]>([]);
+  const { modalidades, isLoading, createModalidad, updateModalidad, deleteModalidad } = useModalidades();
   const [searchTerm, setSearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedModalidad, setSelectedModalidad] = useState<Modalidad | null>(null);
+  const [selectedModalidad, setSelectedModalidad] = useState<any>(null);
   const [modalType, setModalType] = useState<'create' | 'edit'>('create');
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    fetchModalidades();
-  }, []);
-
-  useEffect(() => {
-    const filtered = modalidades.filter(modalidad => 
-      modalidad.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (modalidad.descripcion && modalidad.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Filtro solo para mostrar
+  const filteredModalidades = useMemo(() => {
+    if (!searchTerm) return modalidades;
+    const term = searchTerm.toLowerCase();
+    return modalidades.filter(modalidad => 
+      modalidad.codigo?.toLowerCase().includes(term) ||
+      modalidad.descripcion?.toLowerCase().includes(term)
     );
-    setFilteredModalidades(filtered);
   }, [modalidades, searchTerm]);
 
-  const fetchModalidades = async () => {
-    try {
-      setIsLoading(true);
-      const response = await modalidadApi.getAll();
-      const data = response.data.data || response.data;
-      setModalidades(data);
-    } catch (error) {
-      showToast.error('Error al cargar modalidades');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOpenModal = (type: 'create' | 'edit', modalidad?: Modalidad) => {
+  const handleOpenModal = (type: 'create' | 'edit', modalidad?: any) => {
     setModalType(type);
     setSelectedModalidad(modalidad || null);
     setModalOpen(true);
@@ -62,32 +45,28 @@ export default function ModalidadesPage() {
   const handleSubmit = async (data: any) => {
     try {
       if (modalType === 'create') {
-        const response = await modalidadApi.create(data);
-        const newModalidad = response.data.data || response.data;
-        setModalidades([...modalidades, newModalidad]);
-        showToast.success('Modalidad creada exitosamente');
+        await createModalidad({
+          codigo: data.codigo,
+          descripcion: data.descripcion
+        });
       } else if (selectedModalidad) {
-        const response = await modalidadApi.update(selectedModalidad.modalidad_id, data);
-        const updatedModalidad = response.data.data || response.data;
-        setModalidades(modalidades.map(m => 
-          m.modalidad_id === selectedModalidad.modalidad_id ? updatedModalidad : m
-        ));
-        showToast.success('Modalidad actualizada exitosamente');
+        await updateModalidad(parseInt(selectedModalidad.id), {
+          codigo: data.codigo,
+          descripcion: data.descripcion
+        });
       }
       handleCloseModal();
     } catch (error) {
-      showToast.error('Error al guardar modalidad');
+      console.error('Error al guardar modalidad:', error);
     }
   };
 
-  const handleDelete = async (modalidad: Modalidad) => {
+  const handleDelete = async (modalidad: any) => {
     if (window.confirm(`¿Está seguro de que desea eliminar la modalidad "${modalidad.codigo}"?`)) {
       try {
-        await modalidadApi.delete(modalidad.modalidad_id);
-        setModalidades(modalidades.filter(m => m.modalidad_id !== modalidad.modalidad_id));
-        showToast.success('Modalidad eliminada exitosamente');
+        await deleteModalidad(parseInt(modalidad.id));
       } catch (error) {
-        showToast.error('Error al eliminar modalidad');
+        console.error('Error al eliminar modalidad:', error);
       }
     }
   };
@@ -169,7 +148,7 @@ export default function ModalidadesPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredModalidades.map((modalidad, index) => (
                   <motion.tr
-                    key={modalidad.modalidad_id}
+                    key={modalidad.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}

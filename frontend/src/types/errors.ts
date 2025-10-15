@@ -33,6 +33,20 @@ export function getErrorMessage(error: unknown): string {
     return error.message;
   }
   
+  // Manejar errores de Supabase
+  if (error && typeof error === 'object') {
+    const supabaseError = error as any;
+    if (supabaseError.message) {
+      return supabaseError.message;
+    }
+    if (supabaseError.error) {
+      return supabaseError.error;
+    }
+    if (supabaseError.hint) {
+      return supabaseError.hint;
+    }
+  }
+  
   return 'Error desconocido';
 }
 

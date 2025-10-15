@@ -7,8 +7,11 @@ export interface EquipmentUI {
   modelo: string;
   numeroSerie: string;
   fabricante: string;
+  fabricante_id: number;
   modalidad: string;
+  modalidad_id: number;
   cliente: string;
+  cliente_id: number;
   estado: 'operativo' | 'mantenimiento' | 'fuera-servicio';
   ubicacion: string;
   fechaInstalacion: string;
@@ -35,6 +38,8 @@ export interface ClientUI {
 
 export interface OrderUI {
   id: string;
+  equipo_id?: number;
+  cliente_id?: number;
   equipo: {
     modelo: string;
     numeroSerie: string;
@@ -55,36 +60,60 @@ export interface OrderUI {
 // Funciones de mapeo desde backend hacia UI
 import { Equipment, Client, Order } from '@/lib/api';
 
-export const mapEquipmentToUI = (equipment: Equipment): EquipmentUI => ({
-  id: equipment.equipo_id.toString(),
-  modelo: equipment.modelo || '',
-  numeroSerie: equipment.numero_serie || '',
-  fabricante: equipment.fabricante?.nombre || '',
-  modalidad: equipment.modalidad?.descripcion || equipment.modalidad?.codigo || '',
-  cliente: equipment.cliente?.nombre || '',
-  estado: mapEstadoEquipo(equipment.estado_equipo),
-  ubicacion: equipment.ubicacion || '',
-  fechaInstalacion: equipment.fecha_instalacion || '',
-  ultimaCalibacion: '', // Se calculará desde historial
-  proximaCalibacion: '', // Se calculará desde historial
-});
+export const mapEquipmentToUI = (equipment: Equipment): EquipmentUI => {
+  return {
+    id: equipment.equipo_id?.toString() || '',
+    modelo: equipment.modelo || '',
+    numeroSerie: equipment.numero_serie || '',
+    fabricante: equipment.fabricante?.nombre || '',
+    fabricante_id: equipment.fabricante_id,
+    modalidad: equipment.modalidad?.codigo || '',
+    modalidad_id: equipment.modalidad_id,
+    cliente: equipment.cliente?.nombre || '',
+    cliente_id: equipment.cliente_id,
+    estado: mapEstadoEquipo(equipment.estado_equipo),
+    ubicacion: equipment.ubicacion || '',
+    fechaInstalacion: equipment.fecha_instalacion || equipment.fechaInstalacion || '',
+    ultimaCalibacion: (equipment as any).ultima_calibracion || equipment.ultimaCalibacion || '',
+    proximaCalibacion: (equipment as any).proxima_calibracion || equipment.proximaCalibacion || '',
+  };
+};
 
-export const mapClientToUI = (client: Client): ClientUI => ({
-  id: client.cliente_id.toString(),
-  nombre: client.nombre || '',
-  tipo: mapTipoCliente(client.tipo),
-  ciudad: client.ciudad || '',
-  estado: client.estado || '',
-  equiposCount: client.equipos?.length || 0,
-  contacto: {
-    telefono: client.telefono || '',
-    email: client.email || '',
-    responsable: typeof client.contacto === 'string' ? client.contacto : client.contacto?.responsable || '',
-  },
-  fechaRegistro: client.fechaRegistro || new Date().toISOString().split('T')[0],
-  ultimaActividad: client.ultimaActividad || new Date().toISOString().split('T')[0],
-  estado_cliente: client.estado_cliente || 'activo',
-});
+export const mapClientToUI = (client: Client): ClientUI => {
+  // Tolerancia para contacto
+  let contactoObj = { telefono: '', email: '', responsable: '' };
+  if (typeof client.contacto === 'object' && client.contacto !== null) {
+    contactoObj = {
+      telefono: client.contacto.telefono || client.telefono || '',
+      email: client.contacto.email || client.email || '',
+      responsable: client.contacto.responsable || '',
+    };
+  } else if (typeof client.contacto === 'string') {
+    contactoObj = {
+      telefono: client.telefono || '',
+      email: client.email || '',
+      responsable: client.contacto,
+    };
+  } else {
+    contactoObj = {
+      telefono: client.telefono || '',
+      email: client.email || '',
+      responsable: '',
+    };
+  }
+  return {
+    id: client.cliente_id?.toString() || '',
+    nombre: client.nombre || '',
+    tipo: mapTipoCliente(client.tipo) || 'publico',
+    ciudad: client.ciudad || '',
+    estado: client.estado || '',
+    equiposCount: Array.isArray(client.equipos) ? client.equipos.length : 0,
+    contacto: contactoObj,
+    fechaRegistro: client.fechaRegistro || new Date().toISOString().split('T')[0],
+    ultimaActividad: client.ultimaActividad || new Date().toISOString().split('T')[0],
+    estado_cliente: client.estado_cliente === 'activo' || client.estado_cliente === 'inactivo' ? client.estado_cliente : 'activo',
+  };
+};
 
 export const mapOrderToUI = (order: Order): OrderUI => ({
   id: order.orden_id.toString(),

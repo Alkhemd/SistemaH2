@@ -20,7 +20,7 @@ import {
   X,
   FileText
 } from 'lucide-react';
-import { useOrders } from '@/hooks/useApi';
+import { useOrdenes } from '@/hooks/useCatalogs';
 import { useEquipments, useClients } from '@/hooks/useApi';
 import { useTecnicos } from '@/hooks/useCatalogs';
 import { showToast } from '@/components/ui/Toast';
@@ -47,7 +47,7 @@ interface Order {
 
 export default function OrdenesPage() {
   // Hooks para datos del API
-  const { orders, createOrder, updateOrder, deleteOrder } = useOrders();
+  const { ordenes: orders, createOrden: createOrder, updateOrden: updateOrder, deleteOrden: deleteOrder, isLoading: isLoadingOrdenes } = useOrdenes();
   const { equipments } = useEquipments();
   const { clients } = useClients();
   const { tecnicos } = useTecnicos();
@@ -117,15 +117,12 @@ export default function OrdenesPage() {
     setIsLoading(true);
     try {
       await createOrder({
-        tipo: formData.tipo,
-        prioridad: formData.prioridad,
-        titulo: formData.titulo,
-        descripcion: formData.descripcion,
-        fechaCreacion: new Date().toISOString().split('T')[0],
-        tiempoEstimado: formData.tiempo_estimado || '2 horas',
-        equipo: { modelo: '', numeroSerie: '', fabricante: '' },
-        cliente: '',
-        estado: 'abierta'
+        equipo_id: formData.equipo_id,
+        cliente_id: formData.cliente_id,
+        prioridad: formData.prioridad.charAt(0).toUpperCase() + formData.prioridad.slice(1),
+        estado: formData.tipo === 'preventivo' ? 'En Proceso' : 'Abierta',
+        falla_reportada: formData.descripcion || formData.titulo,
+        origen: 'Portal'
       });
       showToast.success('¡Orden creada exitosamente!');
       setIsModalOpen(false);
@@ -155,14 +152,71 @@ export default function OrdenesPage() {
     setOpenMenuId(null);
   };
 
+  // Estado para edición
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
+
   const handleEdit = (order: Order) => {
-    showToast.loading('Función de edición en desarrollo');
+    const orderData = order as any;
+    setEditFormData({
+      id: order.id,
+      equipo_id: orderData.equipo_id || 0,
+      cliente_id: orderData.cliente_id || 0,
+      prioridad: order.prioridad,
+      estado: order.estado,
+      titulo: order.titulo,
+      descripcion: orderData.descripcion || order.titulo || '',
+    });
+    setIsEditModalOpen(true);
     setOpenMenuId(null);
   };
 
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData) return;
+    setIsLoading(true);
+    try {
+      await updateOrder(parseInt(editFormData.id), {
+        equipo_id: editFormData.equipo_id,
+        cliente_id: editFormData.cliente_id,
+        prioridad: editFormData.prioridad,
+        estado: editFormData.estado,
+        falla_reportada: editFormData.descripcion || editFormData.titulo
+      });
+      showToast.success('¡Orden actualizada exitosamente!');
+      setIsEditModalOpen(false);
+    } catch (error: any) {
+      showToast.error('Error al actualizar la orden');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Estado para cambio de estado
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusOrder, setStatusOrder] = useState<Order | null>(null);
+  const [newStatus, setNewStatus] = useState('abierta');
+
   const handleChangeStatus = (order: Order) => {
-    showToast.loading('Función de cambio de estado en desarrollo');
+    setStatusOrder(order);
+    setNewStatus(order.estado);
+    setIsStatusModalOpen(true);
     setOpenMenuId(null);
+  };
+
+  const handleStatusSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!statusOrder) return;
+    setIsLoading(true);
+    try {
+      await updateOrder(parseInt(statusOrder.id), { estado: newStatus });
+      showToast.success('Estado actualizado');
+      setIsStatusModalOpen(false);
+    } catch (error) {
+      showToast.error('Error al cambiar el estado');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (order: Order) => {
@@ -171,7 +225,7 @@ export default function OrdenesPage() {
     }
     
     try {
-      await deleteOrder(order.id);
+      await deleteOrder(parseInt(order.id));
       showToast.success('Orden eliminada exitosamente');
       setOpenMenuId(null);
     } catch (error) {
@@ -972,6 +1026,105 @@ export default function OrdenesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal de Edición */}
+      {isEditModalOpen && editFormData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-[#1D1D1F] mb-4">Editar Orden</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#6E6E73] mb-2">Prioridad</label>
+                <select
+                  value={editFormData.prioridad}
+                  onChange={(e) => setEditFormData({...editFormData, prioridad: e.target.value})}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="critica">Crítica</option>
+                  <option value="alta">Alta</option>
+                  <option value="normal">Normal</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#6E6E73] mb-2">Estado</label>
+                <select
+                  value={editFormData.estado}
+                  onChange={(e) => setEditFormData({...editFormData, estado: e.target.value})}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="abierta">Abierta</option>
+                  <option value="proceso">En Proceso</option>
+                  <option value="cerrada">Cerrada</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#6E6E73] mb-2">Descripción</label>
+                <textarea
+                  value={editFormData.descripcion}
+                  onChange={(e) => setEditFormData({...editFormData, descripcion: e.target.value})}
+                  rows={4}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-6 py-2.5 text-[#6E6E73] hover:text-[#1D1D1F] font-medium rounded-xl hover:bg-gray-200 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg disabled:opacity-50"
+                >
+                  {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cambio de Estado */}
+      {isStatusModalOpen && statusOrder && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-[#1D1D1F] mb-4">Cambiar Estado</h2>
+            <form onSubmit={handleStatusSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#6E6E73] mb-2">Estado</label>
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="abierta">Abierta</option>
+                  <option value="proceso">En Proceso</option>
+                  <option value="cerrada">Cerrada</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusModalOpen(false)}
+                  className="px-6 py-2.5 text-[#6E6E73] hover:text-[#1D1D1F] font-medium rounded-xl hover:bg-gray-200 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg disabled:opacity-50"
+                >
+                  {isLoading ? 'Guardando...' : 'Guardar Estado'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

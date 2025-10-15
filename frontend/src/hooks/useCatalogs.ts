@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { modalidadApi, fabricanteApi, tecnicoApi } from '@/lib/api';
+// import { modalidadApi, fabricanteApi, tecnicoApi } from '@/lib/api';
+import { tecnicosService } from '../services/tecnicosService';
+import { modalidadesService } from '../services/modalidadesService';
+import { fabricantesService } from '../services/fabricantesService';
+import { ordenesService } from '../services/ordenesService';
 import { showToast } from '@/components/ui/Toast';
-import { mapModalidadToUI, mapFabricanteToUI, mapTecnicoToUI } from '@/lib/mappers';
+import { mapModalidadToUI, mapFabricanteToUI, mapTecnicoToUI, mapOrderToUI } from '@/lib/mappers';
 import { getErrorMessage } from '@/types/errors';
 
 // ============================================================================
@@ -15,13 +19,14 @@ export const useModalidades = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // CRUD Supabase
   const fetchModalidades = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await modalidadApi.getAll();
-      const data = response.data.data || response.data;
-      const mapped = data.map(mapModalidadToUI);
+      const { data, error } = await modalidadesService.getAll();
+      if (error) throw error;
+      const mapped = Array.isArray(data) ? data.map(mapModalidadToUI) : [];
       setModalidades(mapped);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar modalidades';
@@ -31,13 +36,12 @@ export const useModalidades = () => {
       setIsLoading(false);
     }
   };
-
   const createModalidad = async (data: { codigo: string; descripcion?: string }) => {
     try {
       setIsLoading(true);
-      const response = await modalidadApi.create(data);
-      const responseData = response.data.data || response.data;
-      const mapped = mapModalidadToUI(responseData);
+      const { data: created, error } = await modalidadesService.create(data);
+      if (error || !created) throw error;
+      const mapped = mapModalidadToUI(created);
       setModalidades([...modalidades, mapped]);
       showToast.success('Modalidad creada exitosamente');
       return mapped;
@@ -49,13 +53,12 @@ export const useModalidades = () => {
       setIsLoading(false);
     }
   };
-
   const updateModalidad = async (id: number, data: Partial<{ codigo: string; descripcion?: string }>) => {
     try {
       setIsLoading(true);
-      const response = await modalidadApi.update(id, data);
-      const responseData = response.data.data || response.data;
-      const mapped = mapModalidadToUI(responseData);
+      const { data: updated, error } = await modalidadesService.update(id, data);
+      if (error || !updated) throw error;
+      const mapped = mapModalidadToUI(updated);
       setModalidades(modalidades.map(m => m.id === id.toString() ? mapped : m));
       showToast.success('Modalidad actualizada exitosamente');
       return mapped;
@@ -67,14 +70,20 @@ export const useModalidades = () => {
       setIsLoading(false);
     }
   };
-
   const deleteModalidad = async (id: number) => {
     try {
       setIsLoading(true);
-      await modalidadApi.delete(id);
+      const { error } = await modalidadesService.delete(id);
+      
+      if (error) {
+        console.error('[deleteModalidad] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al eliminar modalidad');
+      }
+      
       setModalidades(modalidades.filter(m => m.id !== id.toString()));
       showToast.success('Modalidad eliminada exitosamente');
     } catch (err) {
+      console.error('[deleteModalidad] Error capturado:', err);
       const errorMessage = getErrorMessage(err) || 'Error al eliminar modalidad';
       showToast.error(errorMessage);
       throw err;
@@ -82,6 +91,8 @@ export const useModalidades = () => {
       setIsLoading(false);
     }
   };
+
+
 
   useEffect(() => {
     if (modalidades.length === 0) {
@@ -110,13 +121,14 @@ export const useFabricantes = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // CRUD Supabase
   const fetchFabricantes = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fabricanteApi.getAll();
-      const data = response.data.data || response.data;
-      const mapped = data.map(mapFabricanteToUI);
+      const { data, error } = await fabricantesService.getAll();
+      if (error) throw error;
+      const mapped = Array.isArray(data) ? data.map(mapFabricanteToUI) : [];
       setFabricantes(mapped);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar fabricantes';
@@ -126,17 +138,28 @@ export const useFabricantes = () => {
       setIsLoading(false);
     }
   };
-
   const createFabricante = async (data: { nombre: string; pais?: string; soporte_tel?: string; web?: string }) => {
     try {
       setIsLoading(true);
-      const response = await fabricanteApi.create(data);
-      const responseData = response.data.data || response.data;
-      const mapped = mapFabricanteToUI(responseData);
+      console.log('[createFabricante] Enviando datos:', data);
+      const { data: created, error } = await fabricantesService.create(data);
+      console.log('[createFabricante] Respuesta:', { created, error });
+      
+      if (error) {
+        console.error('[createFabricante] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al crear fabricante');
+      }
+      
+      if (!created) {
+        throw new Error('No se recibió respuesta del servidor');
+      }
+      
+      const mapped = mapFabricanteToUI(created);
       setFabricantes([...fabricantes, mapped]);
       showToast.success('Fabricante creado exitosamente');
       return mapped;
     } catch (err) {
+      console.error('[createFabricante] Error capturado:', err);
       const errorMessage = getErrorMessage(err) || 'Error al crear fabricante';
       showToast.error(errorMessage);
       throw err;
@@ -144,13 +167,12 @@ export const useFabricantes = () => {
       setIsLoading(false);
     }
   };
-
   const updateFabricante = async (id: number, data: Partial<{ nombre: string; pais?: string; soporte_tel?: string; web?: string }>) => {
     try {
       setIsLoading(true);
-      const response = await fabricanteApi.update(id, data);
-      const responseData = response.data.data || response.data;
-      const mapped = mapFabricanteToUI(responseData);
+      const { data: updated, error } = await fabricantesService.update(id, data);
+      if (error || !updated) throw error;
+      const mapped = mapFabricanteToUI(updated);
       setFabricantes(fabricantes.map(f => f.id === id.toString() ? mapped : f));
       showToast.success('Fabricante actualizado exitosamente');
       return mapped;
@@ -162,14 +184,20 @@ export const useFabricantes = () => {
       setIsLoading(false);
     }
   };
-
   const deleteFabricante = async (id: number) => {
     try {
       setIsLoading(true);
-      await fabricanteApi.delete(id);
+      const { error } = await fabricantesService.delete(id);
+      
+      if (error) {
+        console.error('[deleteFabricante] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al eliminar fabricante');
+      }
+      
       setFabricantes(fabricantes.filter(f => f.id !== id.toString()));
       showToast.success('Fabricante eliminado exitosamente');
     } catch (err) {
+      console.error('[deleteFabricante] Error capturado:', err);
       const errorMessage = getErrorMessage(err) || 'Error al eliminar fabricante';
       showToast.error(errorMessage);
       throw err;
@@ -177,6 +205,8 @@ export const useFabricantes = () => {
       setIsLoading(false);
     }
   };
+
+
 
   useEffect(() => {
     if (fabricantes.length === 0) {
@@ -209,9 +239,17 @@ export const useTecnicos = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await tecnicoApi.getAll();
-      const data = response.data.data || response.data;
-      const mapped = data.map(mapTecnicoToUI);
+      const { data, error } = await tecnicosService.getAll();
+      if (error) throw error;
+      // Adaptar especialidad a los valores esperados por el mapeador
+      const mapped = Array.isArray(data)
+        ? data.map((t: any) => mapTecnicoToUI({
+            ...t,
+            especialidad: [
+              'XR','CT','MR','US','MG','PET/CT','Multi-mod','DEXA','RF','CATH'
+            ].includes(String(t.especialidad)) ? String(t.especialidad) : 'Multi-mod',
+          }))
+        : [];
       setTecnicos(mapped);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar técnicos';
@@ -222,20 +260,23 @@ export const useTecnicos = () => {
     }
   };
 
-  const createTecnico = async (data: {
-    nombre: string;
-    especialidad?: 'XR' | 'CT' | 'MR' | 'US' | 'MG' | 'PET/CT' | 'Multi-mod' | 'DEXA' | 'RF' | 'CATH';
-    certificaciones?: string;
-    telefono?: string;
-    email?: string;
-    base_ciudad?: string;
-    activo?: number;
-  }) => {
+  const createTecnico = async (data: any) => {
     try {
       setIsLoading(true);
-      const response = await tecnicoApi.create(data as any);
-      const responseData = response.data.data || response.data;
-      const mapped = mapTecnicoToUI(responseData);
+      const { data: created, error } = await tecnicosService.create(data);
+      if (error || !created) throw error;
+      const especialidades = [
+        'XR','CT','MR','US','MG','PET/CT','Multi-mod','DEXA','RF','CATH'
+      ] as const;
+      const especialidadStr = String(created.especialidad || '');
+      const especialidadVal = especialidades.includes(especialidadStr as any)
+        ? (especialidadStr as typeof especialidades[number])
+        : 'Multi-mod';
+      const mapped = mapTecnicoToUI({
+        ...created,
+        especialidad: especialidadVal,
+        activo: typeof created.activo === 'boolean' ? (created.activo ? 1 : 0) : created.activo,
+      });
       setTecnicos([...tecnicos, mapped]);
       showToast.success('Técnico creado exitosamente');
       return mapped;
@@ -248,20 +289,23 @@ export const useTecnicos = () => {
     }
   };
 
-  const updateTecnico = async (id: number, data: Partial<{
-    nombre: string;
-    especialidad?: 'XR' | 'CT' | 'MR' | 'US' | 'MG' | 'PET/CT' | 'Multi-mod' | 'DEXA' | 'RF' | 'CATH';
-    certificaciones?: string;
-    telefono?: string;
-    email?: string;
-    base_ciudad?: string;
-    activo?: number;
-  }>) => {
+  const updateTecnico = async (id: number, data: any) => {
     try {
       setIsLoading(true);
-      const response = await tecnicoApi.update(id, data as any);
-      const responseData = response.data.data || response.data;
-      const mapped = mapTecnicoToUI(responseData);
+      const { data: updated, error } = await tecnicosService.update(id, data);
+      if (error || !updated) throw error;
+      const especialidades = [
+        'XR','CT','MR','US','MG','PET/CT','Multi-mod','DEXA','RF','CATH'
+      ] as const;
+      const especialidadStr = String(updated.especialidad || '');
+      const especialidadVal = especialidades.includes(especialidadStr as any)
+        ? (especialidadStr as typeof especialidades[number])
+        : 'Multi-mod';
+      const mapped = mapTecnicoToUI({
+        ...updated,
+        especialidad: especialidadVal,
+        activo: typeof updated.activo === 'boolean' ? (updated.activo ? 1 : 0) : updated.activo,
+      });
       setTecnicos(tecnicos.map(t => t.id === id.toString() ? mapped : t));
       showToast.success('Técnico actualizado exitosamente');
       return mapped;
@@ -277,10 +321,17 @@ export const useTecnicos = () => {
   const deleteTecnico = async (id: number) => {
     try {
       setIsLoading(true);
-      await tecnicoApi.delete(id);
+      const { error } = await tecnicosService.delete(id);
+      
+      if (error) {
+        console.error('[deleteTecnico] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al eliminar técnico');
+      }
+      
       setTecnicos(tecnicos.filter(t => t.id !== id.toString()));
       showToast.success('Técnico eliminado exitosamente');
     } catch (err) {
+      console.error('[deleteTecnico] Error capturado:', err);
       const errorMessage = getErrorMessage(err) || 'Error al eliminar técnico';
       showToast.error(errorMessage);
       throw err;
@@ -289,21 +340,10 @@ export const useTecnicos = () => {
     }
   };
 
+  // Si tienes endpoint de técnicos activos, implementa aquí
   const fetchTecnicosActivos = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await tecnicoApi.getActivos();
-      const data = response.data.data || response.data;
-      const mapped = data.map(mapTecnicoToUI);
-      setTecnicos(mapped);
-    } catch (err) {
-      const errorMessage = getErrorMessage(err) || 'Error al cargar técnicos activos';
-      setError(errorMessage);
-      showToast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    // Implementar si se requiere
+    return null;
   };
 
   useEffect(() => {
@@ -322,5 +362,137 @@ export const useTecnicos = () => {
     createTecnico,
     updateTecnico,
     deleteTecnico,
+  };
+};
+
+// ============================================================================
+// HOOK PARA ÓRDENES
+// ============================================================================
+
+export const useOrdenes = () => {
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchOrdenes = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const { data, error } = await ordenesService.getAll();
+      if (error) throw error;
+      const mapped = Array.isArray(data) ? data.map(mapOrderToUI) : [];
+      console.log('[fetchOrdenes] Órdenes mapeadas:', mapped.length);
+      setOrdenes(mapped);
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al cargar órdenes';
+      setError(errorMessage);
+      showToast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createOrden = async (data: any) => {
+    try {
+      setIsLoading(true);
+      console.log('[createOrden] Enviando datos:', data);
+      const { data: created, error } = await ordenesService.create(data);
+      console.log('[createOrden] Respuesta:', { created, error });
+      
+      if (error) {
+        console.error('[createOrden] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al crear orden');
+      }
+      
+      if (!created) {
+        throw new Error('No se recibió respuesta del servidor');
+      }
+      
+      const mapped = mapOrderToUI(created as any);
+      setOrdenes([...ordenes, mapped]);
+      showToast.success('Orden creada exitosamente');
+      return mapped;
+    } catch (err) {
+      console.error('[createOrden] Error capturado:', err);
+      const errorMessage = getErrorMessage(err) || 'Error al crear orden';
+      showToast.error(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateOrden = async (id: number, data: any) => {
+    try {
+      console.log('[updateOrden] Actualizando orden:', id, data);
+      const { data: updated, error } = await ordenesService.update(id, data);
+      
+      if (error) {
+        console.error('[updateOrden] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al actualizar orden');
+      }
+      
+      if (!updated) {
+        throw new Error('No se recibió respuesta del servidor');
+      }
+      
+      console.log('[updateOrden] Orden actualizada, refrescando lista...');
+      
+      // Refrescar directamente sin usar fetchOrdenes para evitar conflictos de isLoading
+      try {
+        const { data: freshData, error: fetchError } = await ordenesService.getAll();
+        if (fetchError) throw fetchError;
+        const mapped = Array.isArray(freshData) ? freshData.map(mapOrderToUI) : [];
+        console.log('[updateOrden] Órdenes refrescadas:', mapped.length);
+        setOrdenes(mapped);
+      } catch (fetchErr) {
+        console.error('[updateOrden] Error al refrescar:', fetchErr);
+      }
+      
+      showToast.success('Orden actualizada exitosamente');
+      return updated;
+    } catch (err) {
+      console.error('[updateOrden] Error capturado:', err);
+      const errorMessage = getErrorMessage(err) || 'Error al actualizar orden';
+      showToast.error(errorMessage);
+      throw err;
+    }
+  };
+
+  const deleteOrden = async (id: number) => {
+    try {
+      setIsLoading(true);
+      const { error } = await ordenesService.delete(id);
+      
+      if (error) {
+        console.error('[deleteOrden] Error de Supabase:', error);
+        throw new Error(error.message || 'Error al eliminar orden');
+      }
+      
+      setOrdenes(ordenes.filter(o => o.id !== id.toString()));
+      showToast.success('Orden eliminada exitosamente');
+    } catch (err) {
+      console.error('[deleteOrden] Error capturado:', err);
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar orden';
+      showToast.error(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrdenes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    ordenes,
+    isLoading,
+    error,
+    fetchOrdenes,
+    createOrden,
+    updateOrden,
+    deleteOrden,
   };
 };

@@ -1,6 +1,7 @@
+import { mapEstadoEquipoToUI } from '@/lib/mappers';
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +9,9 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Equipment } from '@/lib/api';
+import { clientesService } from '@/services/clientesService';
+import { fabricantesService } from '@/services/fabricantesService';
+import { modalidadesService } from '@/services/modalidadesService';
 import { 
   CubeIcon,
   BuildingOfficeIcon,
@@ -18,9 +22,9 @@ import {
 const equipmentSchema = z.object({
   modelo: z.string().min(1, 'El modelo es requerido'),
   numeroSerie: z.string().min(1, 'El número de serie es requerido'),
-  fabricante: z.string().min(1, 'El fabricante es requerido'),
-  modalidad: z.string().min(1, 'La modalidad es requerida'),
-  cliente: z.string().min(1, 'El cliente es requerido'),
+  fabricante_id: z.number().int().positive('Selecciona un fabricante'),
+  modalidad_id: z.number().int().positive('Selecciona una modalidad'),
+  cliente_id: z.number().int().positive('Selecciona un cliente'),
   estado: z.enum(['operativo', 'mantenimiento', 'fuera-servicio']),
   ubicacion: z.string().min(1, 'La ubicación es requerida'),
   fechaInstalacion: z.string().min(1, 'La fecha de instalación es requerida'),
@@ -37,16 +41,7 @@ interface EquipmentFormProps {
   isLoading?: boolean;
 }
 
-const modalidades = [
-  'Tomografía Computarizada',
-  'Resonancia Magnética',
-  'Radiografía',
-  'Ultrasonido',
-  'Mamografía',
-  'Fluoroscopia',
-  'Medicina Nuclear',
-  'Radioterapia'
-];
+// Se obtendrán dinámicamente
 
 const estados = [
   { value: 'operativo', label: 'Operativo', color: 'green' },
@@ -54,12 +49,23 @@ const estados = [
   { value: 'fuera-servicio', label: 'Fuera de Servicio', color: 'red' }
 ];
 
+
 export const EquipmentForm: React.FC<EquipmentFormProps> = ({
   equipment,
   onSubmit,
   onCancel,
   isLoading = false
 }) => {
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [fabricantes, setFabricantes] = useState<any[]>([]);
+  const [modalidades, setModalidades] = useState<any[]>([]);
+
+  useEffect(() => {
+    clientesService.getAll().then(({ data }) => setClientes(data || []));
+    fabricantesService.getAll().then(({ data }) => setFabricantes(data || []));
+    modalidadesService.getAll().then(({ data }) => setModalidades(data || []));
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -70,20 +76,20 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
     defaultValues: equipment ? {
       modelo: equipment.modelo || '',
       numeroSerie: equipment.numero_serie || '',
-      fabricante: 'General Electric',
-      modalidad: 'CT',
-      cliente: 'Hospital General',
-      estado: 'operativo',
+      fabricante_id: equipment.fabricante_id || 0,
+      modalidad_id: equipment.modalidad_id || 0,
+      cliente_id: equipment.cliente_id || 0,
+  estado: equipment.estado_equipo ? mapEstadoEquipoToUI(equipment.estado_equipo) : 'operativo',
       ubicacion: equipment.ubicacion || '',
-      fechaInstalacion: new Date().toISOString().split('T')[0],
-      ultimaCalibacion: new Date().toISOString().split('T')[0],
-      proximaCalibacion: new Date().toISOString().split('T')[0],
+      fechaInstalacion: equipment.fecha_instalacion || new Date().toISOString().split('T')[0],
+      ultimaCalibacion: (equipment as any).ultima_calibracion || equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
+      proximaCalibacion: (equipment as any).proxima_calibracion || equipment.proximaCalibacion || new Date().toISOString().split('T')[0],
     } : {
       modelo: '',
       numeroSerie: '',
-      fabricante: 'General Electric',
-      modalidad: 'CT',
-      cliente: 'Hospital General',
+      fabricante_id: 0,
+      modalidad_id: 0,
+      cliente_id: 0,
       estado: 'operativo',
       ubicacion: '',
       fechaInstalacion: new Date().toISOString().split('T')[0],
@@ -94,9 +100,12 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
 
   const watchedEstado = watch('estado');
 
-  const handleFormSubmit = async (data: EquipmentFormData) => {
+  const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
+    event.preventDefault();
     try {
-      await onSubmit(data);
+      await handleSubmit(async (data) => {
+        await onSubmit(data);
+      })(event);
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -106,7 +115,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
     <motion.form
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      onSubmit={handleSubmit(handleFormSubmit)}
+  onSubmit={handleFormSubmit}
       className="space-y-6 p-6"
     >
       {/* Header */}
@@ -142,30 +151,40 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
             placeholder="Ej: CT750-2023-001"
           />
           
-          <Input
-            label="Fabricante"
-            {...register('fabricante')}
-            error={errors.fabricante?.message}
-            placeholder="Ej: General Electric"
-          />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Fabricante
+            </label>
+            <select
+              {...register('fabricante_id', { valueAsNumber: true })}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            >
+              <option value={0}>Seleccionar fabricante</option>
+              {fabricantes.map(fab => (
+                <option key={fab.fabricante_id} value={fab.fabricante_id}>{fab.nombre}</option>
+              ))}
+            </select>
+            {errors.fabricante_id && (
+              <p className="text-sm text-red-600">{errors.fabricante_id.message}</p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Modalidad
             </label>
             <select
-              {...register('modalidad')}
+              {...register('modalidad_id', { valueAsNumber: true })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             >
-              <option value="">Seleccionar modalidad</option>
-              {modalidades.map((modalidad) => (
-                <option key={modalidad} value={modalidad}>
-                  {modalidad}
-                </option>
+              <option value={0}>Seleccionar modalidad</option>
+              {modalidades.map(mod => (
+                <option key={mod.modalidad_id} value={mod.modalidad_id}>{mod.codigo} - {mod.descripcion}</option>
               ))}
             </select>
-            {errors.modalidad && (
-              <p className="text-sm text-red-600">{errors.modalidad.message}</p>
+            {errors.modalidad_id && (
+              <p className="text-sm text-red-600">{errors.modalidad_id.message}</p>
             )}
           </div>
         </div>
@@ -177,12 +196,24 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
             Ubicación y Cliente
           </h4>
           
-          <Input
-            label="Cliente"
-            {...register('cliente')}
-            error={errors.cliente?.message}
-            placeholder="Ej: Hospital General de México"
-          />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Cliente
+            </label>
+            <select
+              {...register('cliente_id', { valueAsNumber: true })}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            >
+              <option value={0}>Seleccionar cliente</option>
+              {clientes.map(cli => (
+                <option key={cli.cliente_id} value={cli.cliente_id}>{cli.nombre}</option>
+              ))}
+            </select>
+            {errors.cliente_id && (
+              <p className="text-sm text-red-600">{errors.cliente_id.message}</p>
+            )}
+          </div>
           
           <Input
             label="Ubicación"

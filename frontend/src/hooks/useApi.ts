@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { equipmentApi, clientApi, orderApi } from '@/lib/api';
+import { equiposService } from '../services/equiposService';
+import { clientesService } from '../services/clientesService';
+import { ordenesService } from '../services/ordenesService';
 import { EquipmentUI, ClientUI, OrderUI } from '@/types/equipment';
 import { useStore } from '@/store/useStore';
 import { showToast } from '@/components/ui/Toast';
@@ -27,9 +29,11 @@ export const useEquipments = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await equipmentApi.getAll();
-      const mappedEquipments = mapEquipmentsToUI(response.data.data || response.data);
-      setEquipments(mappedEquipments);
+      const { data, error } = await equiposService.getAll();
+      if (error) throw error;
+  // Adaptar tipos flexibles de Supabase a los tipos estrictos del frontend
+  const mappedEquipments = Array.isArray(data) ? data.map((eq: any) => mapEquipmentToUI(eq)) : [];
+  setEquipments(mappedEquipments);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar equipos';
       setError(errorMessage);
@@ -42,22 +46,26 @@ export const useEquipments = () => {
   const createEquipment = async (data: Omit<EquipmentUI, 'id'>) => {
     try {
       setLoading(true);
-      
-      // Obtener IDs reales desde los catálogos
-      // Si los datos vienen como strings (nombres), usar ID por defecto
-      // Si vienen como números, usarlos directamente
-      const clienteId = typeof data.cliente === 'string' ? 1 : (parseInt(data.cliente) || 1);
-      const modalidadId = typeof data.modalidad === 'string' ? 1 : (parseInt(data.modalidad) || 1);
-      const fabricanteId = typeof data.fabricante === 'string' ? 1 : (parseInt(data.fabricante) || 1);
-      
-      const apiData = mapEquipmentToAPI(data, clienteId, modalidadId, fabricanteId);
-      const response = await equipmentApi.create(apiData as any);
-      const mappedEquipment = mapEquipmentToUI(response.data.data || response.data);
+      if (!data.cliente_id || !data.modalidad_id || !data.fabricante_id) {
+        throw new Error('Faltan IDs de cliente, modalidad o fabricante');
+      }
+      const apiData = mapEquipmentToAPI(data);
+      const { data: created, error } = await equiposService.create(apiData as any);
+      if (error || !created) {
+        const errorMessage = getErrorMessage(error) || error?.message || 'Error al crear equipo';
+        showToast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      const tolerantEquipment = {
+        ...created,
+        estado_equipo: created?.estado_equipo || 'Operativo',
+      } as any;
+      const mappedEquipment = mapEquipmentToUI(tolerantEquipment);
       setEquipments([...equipments, mappedEquipment]);
       showToast.success('Equipo creado exitosamente');
       return mappedEquipment;
-    } catch (err) {
-      const errorMessage = getErrorMessage(err) || 'Error al crear equipo';
+    } catch (err: any) {
+      const errorMessage = getErrorMessage(err) || err?.message || 'Error al crear equipo';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -68,14 +76,26 @@ export const useEquipments = () => {
   const updateEquipment = async (id: string, data: Partial<EquipmentUI>) => {
     try {
       setLoading(true);
+      if (!data.cliente_id || !data.modalidad_id || !data.fabricante_id) {
+        throw new Error('Faltan IDs de cliente, modalidad o fabricante');
+      }
       const apiData = mapEquipmentToAPI(data);
-      const response = await equipmentApi.update(parseInt(id), apiData);
-      const mappedEquipment = mapEquipmentToUI(response.data.data || response.data);
+      const { data: updated, error } = await equiposService.update(parseInt(id), apiData as any);
+      if (error || !updated) {
+        const errorMessage = getErrorMessage(error) || error?.message || 'Error al actualizar equipo';
+        showToast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      const tolerantEquipment = {
+        ...updated,
+        estado_equipo: updated?.estado_equipo || 'Operativo',
+      } as any;
+      const mappedEquipment = mapEquipmentToUI(tolerantEquipment);
       setEquipments(equipments.map(eq => eq.id === id ? mappedEquipment : eq));
       showToast.success('Equipo actualizado exitosamente');
       return mappedEquipment;
-    } catch (err) {
-      const errorMessage = getErrorMessage(err) || 'Error al actualizar equipo';
+    } catch (err: any) {
+      const errorMessage = getErrorMessage(err) || err?.message || 'Error al actualizar equipo';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -86,11 +106,16 @@ export const useEquipments = () => {
   const deleteEquipment = async (id: string) => {
     try {
       setLoading(true);
-      await equipmentApi.delete(parseInt(id));
+      const { error } = await equiposService.delete(parseInt(id));
+      if (error) {
+        const errorMessage = getErrorMessage(error) || error?.message || 'Error al eliminar equipo';
+        showToast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
       setEquipments(equipments.filter(eq => eq.id !== id));
       showToast.success('Equipo eliminado exitosamente');
-    } catch (err) {
-      const errorMessage = getErrorMessage(err) || 'Error al eliminar equipo';
+    } catch (err: any) {
+      const errorMessage = getErrorMessage(err) || err?.message || 'Error al eliminar equipo';
       showToast.error(errorMessage);
       throw err;
     } finally {
@@ -124,9 +149,10 @@ export const useClients = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await clientApi.getAll();
-      const mappedClients = mapClientsToUI(response.data.data || response.data);
-      setClients(mappedClients);
+      const { data, error } = await clientesService.getAll();
+      if (error) throw error;
+  const mappedClients = Array.isArray(data) ? data.map((cl: any) => mapClientToUI(cl)) : [];
+  setClients(mappedClients);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar clientes';
       setError(errorMessage);
@@ -139,9 +165,20 @@ export const useClients = () => {
   const createClient = async (data: Omit<ClientUI, 'id'>) => {
     try {
       setLoading(true);
-      const apiData = mapClientToAPI(data);
-      const response = await clientApi.create(apiData as any);
-      const mappedClient = mapClientToUI(response.data.data || response.data);
+      // mapClientToAPI puede devolver propiedades undefined, forzar string vacía si es necesario
+      const apiData = {
+        ...mapClientToAPI(data),
+        nombre: data.nombre || '',
+        tipo: data.tipo || 'publico',
+      };
+      const { data: created, error } = await clientesService.create(apiData as any);
+      if (error || !created) throw error;
+      // Adaptar el tipo Cliente (Supabase) a Client (frontend) para el mapper
+      const tolerantClient = {
+        ...created,
+        tipo: created?.tipo || 'Hospital',
+      } as any;
+      const mappedClient = mapClientToUI(tolerantClient);
       setClients([...clients, mappedClient]);
       showToast.success('Cliente creado exitosamente');
       return mappedClient;
@@ -157,9 +194,18 @@ export const useClients = () => {
   const updateClient = async (id: string, data: Partial<ClientUI>) => {
     try {
       setLoading(true);
-      const apiData = mapClientToAPI(data);
-      const response = await clientApi.update(parseInt(id), apiData);
-      const mappedClient = mapClientToUI(response.data.data || response.data);
+      const apiData = {
+        ...mapClientToAPI(data),
+        nombre: data.nombre || '',
+        tipo: data.tipo || 'publico',
+      };
+      const { data: updated, error } = await clientesService.update(parseInt(id), apiData as any);
+      if (error || !updated) throw error;
+      const tolerantClient = {
+        ...updated,
+        tipo: updated?.tipo || 'Hospital',
+      } as any;
+      const mappedClient = mapClientToUI(tolerantClient);
       setClients(clients.map(cl => cl.id === id ? mappedClient : cl));
       showToast.success('Cliente actualizado exitosamente');
       return mappedClient;
@@ -175,7 +221,7 @@ export const useClients = () => {
   const deleteClient = async (id: string) => {
     try {
       setLoading(true);
-      await clientApi.delete(parseInt(id));
+      await clientesService.delete(parseInt(id));
       setClients(clients.filter(cl => cl.id !== id));
       showToast.success('Cliente eliminado exitosamente');
     } catch (err) {
@@ -213,9 +259,10 @@ export const useOrders = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await orderApi.getAll();
-      const mappedOrders = mapOrdersToUI(response.data.data || response.data);
-      setOrders(mappedOrders);
+      const { data, error } = await ordenesService.getAll();
+      if (error) throw error;
+  const mappedOrders = Array.isArray(data) ? data.map((or: any) => mapOrderToUI(or)) : [];
+  setOrders(mappedOrders);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar órdenes';
       setError(errorMessage);
@@ -225,18 +272,18 @@ export const useOrders = () => {
     }
   };
 
-  const createOrder = async (data: Omit<OrderUI, 'id'>) => {
+  const createOrder = async (data: Omit<OrderUI, 'id'> & { equipo_id: number; cliente_id: number }) => {
     try {
       setLoading(true);
-      
-      // Obtener IDs reales desde los datos
-      // Por ahora usamos valores por defecto, pero esto debería venir del formulario
-      const equipoId = 1; // Este ID debería venir del selector de equipos en el formulario
-      const clienteId = 1; // Este ID debería venir del selector de clientes en el formulario
-      
-      const apiData = mapOrderToAPI(data, equipoId, clienteId);
-      const response = await orderApi.create(apiData as any);
-      const mappedOrder = mapOrderToUI(response.data.data || response.data);
+      // Usar los IDs reales del formulario
+      const apiData = mapOrderToAPI(data);
+      const { data: created, error } = await ordenesService.create(apiData as any);
+      if (error || !created) throw error;
+      const tolerantOrder = {
+        ...created,
+        prioridad: created?.prioridad || 'Media',
+      } as any;
+      const mappedOrder = mapOrderToUI(tolerantOrder);
       setOrders([...orders, mappedOrder]);
       showToast.success('Orden creada exitosamente');
       return mappedOrder;
@@ -249,12 +296,29 @@ export const useOrders = () => {
     }
   };
 
-  const updateOrder = async (id: string, data: Partial<OrderUI>) => {
+  // Busca el orden_id real a partir del id string del frontend
+  const getOrdenIdByIdString = (id: string) => {
+    const found = orders.find(or => or.id === id);
+    // Si el id es numérico, úsalo directo
+    if (!found && !isNaN(Number(id))) return Number(id);
+    // Si se encuentra, intenta extraer el orden_id numérico
+    if (found && found.id) return Number(found.id);
+    return undefined;
+  };
+
+  const updateOrder = async (id: string, data: Partial<OrderUI> & { equipo_id?: number; cliente_id?: number }) => {
     try {
       setLoading(true);
-      const apiData = mapOrderToAPI(data);
-      const response = await orderApi.update(parseInt(id), apiData);
-      const mappedOrder = mapOrderToUI(response.data.data || response.data);
+      const ordenId = getOrdenIdByIdString(id);
+      if (!ordenId) throw new Error('No se pudo determinar el orden_id real');
+      const apiData = mapOrderToAPI(data, { isEdit: true });
+      const { data: updated, error } = await ordenesService.update(ordenId, apiData as any);
+      if (error || !updated) throw error;
+      const tolerantOrder = {
+        ...updated,
+        prioridad: updated?.prioridad || 'Media',
+      } as any;
+      const mappedOrder = mapOrderToUI(tolerantOrder);
       setOrders(orders.map(or => or.id === id ? mappedOrder : or));
       showToast.success('Orden actualizada exitosamente');
       return mappedOrder;
@@ -270,7 +334,9 @@ export const useOrders = () => {
   const deleteOrder = async (id: string) => {
     try {
       setLoading(true);
-      await orderApi.delete(parseInt(id));
+      const ordenId = getOrdenIdByIdString(id);
+      if (!ordenId) throw new Error('No se pudo determinar el orden_id real');
+      await ordenesService.delete(ordenId);
       setOrders(orders.filter(or => or.id !== id));
       showToast.success('Orden eliminada exitosamente');
     } catch (err) {

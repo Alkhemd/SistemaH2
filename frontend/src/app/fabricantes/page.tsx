@@ -35,8 +35,8 @@ export default function FabricantesPage() {
       await createFabricante({
         nombre: data.nombre,
         pais: data.pais,
-        soporte_tel: data.telefono,
-        web: data.website
+        soporte_tel: data.soporte_tel,
+        web: data.web
       });
       setIsCreateModalOpen(false);
     } catch (error) {
@@ -52,8 +52,8 @@ export default function FabricantesPage() {
       await updateFabricante(parseInt(selectedFabricante.id), {
         nombre: data.nombre,
         pais: data.pais,
-        soporte_tel: data.telefono,
-        web: data.website
+        soporte_tel: data.soporte_tel,
+        web: data.web
       });
       setIsEditModalOpen(false);
       setSelectedFabricante(null);

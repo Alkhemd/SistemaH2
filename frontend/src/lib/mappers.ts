@@ -5,63 +5,10 @@
 import { Equipment, Client, Order, Modalidad, Fabricante, Tecnico } from './api';
 import { EquipmentUI, ClientUI, OrderUI } from '@/types/equipment';
 
+
 // ============================================================================
 // EQUIPMENT MAPPERS
 // ============================================================================
-
-/**
- * Convierte un equipo del backend al formato del frontend
- */
-export function mapEquipmentToUI(equipment: Equipment): EquipmentUI {
-  return {
-    id: equipment.equipo_id?.toString() || equipment.id?.toString() || '',
-    modelo: equipment.modelo || '',
-    numeroSerie: equipment.numero_serie || equipment.numeroSerie || '',
-    fabricante: typeof equipment.fabricante === 'object' && equipment.fabricante?.nombre
-      ? equipment.fabricante.nombre
-      : (equipment.fabricante as any) || '',
-    modalidad: typeof equipment.modalidad === 'object' && equipment.modalidad?.codigo
-      ? equipment.modalidad.codigo
-      : (equipment.modalidad as any) || '',
-    cliente: typeof equipment.cliente === 'object' && equipment.cliente?.nombre
-      ? equipment.cliente.nombre
-      : (equipment.cliente as any) || '',
-    estado: mapEstadoEquipoToUI(equipment.estado_equipo || equipment.estado || 'Operativo'),
-    ubicacion: equipment.ubicacion || '',
-    fechaInstalacion: equipment.fecha_instalacion || equipment.fechaInstalacion || new Date().toISOString().split('T')[0],
-    ultimaCalibacion: (equipment as any).ultima_calibracion || equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
-    proximaCalibacion: (equipment as any).proxima_calibracion || equipment.proximaCalibacion || new Date().toISOString().split('T')[0],
-  };
-}
-
-/**
- * Convierte un equipo del frontend al formato del backend
- */
-export function mapEquipmentToAPI(equipment: Partial<EquipmentUI>, clienteId?: number, modalidadId?: number, fabricanteId?: number): Partial<Equipment> {
-  return {
-    modelo: equipment.modelo,
-    numero_serie: equipment.numeroSerie,
-    cliente_id: clienteId,
-    modalidad_id: modalidadId,
-    fabricante_id: fabricanteId,
-    estado_equipo: mapEstadoEquipoToAPI(equipment.estado || 'operativo'),
-    ubicacion: equipment.ubicacion,
-    fecha_instalacion: equipment.fechaInstalacion,
-    ultima_calibracion: equipment.ultimaCalibacion,
-    proxima_calibracion: equipment.proximaCalibacion,
-  } as any;
-}
-
-/**
- * Mapea el estado del equipo del backend al frontend
- */
-function mapEstadoEquipoToUI(estado: string): 'operativo' | 'mantenimiento' | 'fuera-servicio' {
-  const estadoLower = estado.toLowerCase().replace('_', '-');
-  
-  if (estadoLower.includes('operativo')) return 'operativo';
-  if (estadoLower.includes('mantenimiento')) return 'mantenimiento';
-  return 'fuera-servicio';
-}
 
 /**
  * Mapea el estado del equipo del frontend al backend
@@ -79,6 +26,61 @@ function mapEstadoEquipoToAPI(estado: string): 'Operativo' | 'En_Mantenimiento' 
   }
 }
 
+/**
+ * Mapea el estado del equipo del backend al frontend
+ */
+export function mapEstadoEquipoToUI(estado: string): 'operativo' | 'mantenimiento' | 'fuera-servicio' {
+  switch (estado) {
+    case 'Operativo':
+      return 'operativo';
+    case 'En_Mantenimiento':
+      return 'mantenimiento';
+    case 'Fuera_Servicio':
+    case 'Desinstalado':
+      return 'fuera-servicio';
+    default:
+      return 'operativo';
+  }
+}
+
+/**
+ * Convierte un equipo del backend al formato del frontend
+ */
+export function mapEquipmentToUI(equipment: any): EquipmentUI {
+  return {
+    id: equipment.equipo_id?.toString() || '',
+    modelo: equipment.modelo || '',
+    numeroSerie: equipment.numero_serie || '',
+    fabricante_id: equipment.fabricante_id,
+    fabricante: equipment.fabricante?.nombre || '',
+    modalidad_id: equipment.modalidad_id,
+    modalidad: equipment.modalidad?.codigo || equipment.modalidad?.descripcion || '',
+    cliente_id: equipment.cliente_id,
+    cliente: equipment.cliente?.nombre || '',
+    estado: mapEstadoEquipoToUI(equipment.estado_equipo || 'Operativo'),
+    ubicacion: equipment.ubicacion || '',
+    fechaInstalacion: equipment.fecha_instalacion || '',
+    ultimaCalibacion: equipment.ultima_calibracion || '',
+    proximaCalibacion: equipment.proxima_calibracion || '',
+  };
+}
+
+export function mapEquipmentToAPI(equipment: EquipmentUI) {
+  return {
+    modelo: equipment.modelo,
+    numero_serie: equipment.numeroSerie,
+    cliente_id: equipment.cliente_id,
+    modalidad_id: equipment.modalidad_id,
+    fabricante_id: equipment.fabricante_id,
+    estado_equipo: mapEstadoEquipoToAPI(equipment.estado || ''),
+    ubicacion: equipment.ubicacion,
+    fecha_instalacion: equipment.fechaInstalacion,
+    ultima_calibracion: equipment.ultimaCalibacion,
+    proxima_calibracion: equipment.proximaCalibacion,
+    // Otros campos opcionales pueden agregarse aquí si se usan en el formulario
+  } as any;
+}
+
 // ============================================================================
 // CLIENT MAPPERS
 // ============================================================================
@@ -86,39 +88,22 @@ function mapEstadoEquipoToAPI(estado: string): 'Operativo' | 'En_Mantenimiento' 
 /**
  * Convierte un cliente del backend al formato del frontend
  */
-export function mapClientToUI(client: Client): ClientUI {
-  // Parsear contacto si es string JSON
-  let contacto = { telefono: '', email: '', responsable: '' };
-  
-  if (typeof client.contacto === 'string') {
-    try {
-      contacto = JSON.parse(client.contacto);
-    } catch {
-      contacto = {
-        telefono: client.telefono || '',
-        email: client.email || '',
-        responsable: '',
-      };
-    }
-  } else if (typeof client.contacto === 'object' && client.contacto) {
-    contacto = client.contacto as any;
-  }
-
+export function mapClientToUI(client: any): ClientUI {
   return {
-    id: client.cliente_id?.toString() || client.id?.toString() || '',
+    id: client.cliente_id?.toString() || '',
     nombre: client.nombre || '',
-    tipo: mapTipoClienteToUI(client.tipo || 'Hospital'),
+    tipo: mapTipoClienteToUI(client.tipo || ''),
     ciudad: client.ciudad || '',
     estado: client.estado || '',
     contacto: {
-      telefono: contacto.telefono || client.telefono || '',
-      email: contacto.email || client.email || '',
-      responsable: contacto.responsable || '',
+      telefono: client.telefono || '',
+      email: client.email || '',
+      responsable: client.contacto || '',
     },
-    estado_cliente: client.estado_cliente || 'activo',
-    equiposCount: client.equipos?.length || 0,
-    fechaRegistro: client.fechaRegistro || new Date().toISOString().split('T')[0],
-    ultimaActividad: client.ultimaActividad || new Date().toISOString().split('T')[0],
+    estado_cliente: 'activo',
+    equiposCount: Array.isArray(client.equipos) ? client.equipos.length : 0,
+    fechaRegistro: '',
+    ultimaActividad: new Date().toISOString().split('T')[0],
   };
 }
 
@@ -131,7 +116,7 @@ export function mapClientToAPI(client: Partial<ClientUI>): Partial<Client> {
     tipo: mapTipoClienteToAPI(client.tipo || 'publico'),
     ciudad: client.ciudad,
     estado: client.estado,
-    contacto: client.contacto ? JSON.stringify(client.contacto) : undefined,
+    contacto: client.contacto?.responsable, // Solo el nombre del responsable
     telefono: client.contacto?.telefono,
     email: client.contacto?.email,
   };
@@ -141,17 +126,30 @@ export function mapClientToAPI(client: Partial<ClientUI>): Partial<Client> {
  * Mapea el tipo de cliente del backend al frontend
  */
 function mapTipoClienteToUI(tipo: string): 'publico' | 'privado' {
-  const tipoLower = tipo.toLowerCase();
-  if (tipoLower.includes('hospital') || tipoLower.includes('público')) return 'publico';
-  return 'privado';
+  switch (tipo) {
+    case 'Hospital':
+    case 'Centro Médico':
+      return 'publico';
+    case 'Clínica':
+    case 'Laboratorio':
+      return 'privado';
+    default:
+      return 'publico';
+  }
 }
 
 /**
  * Mapea el tipo de cliente del frontend al backend
  */
 function mapTipoClienteToAPI(tipo: string): 'Hospital' | 'Clínica' | 'Centro Médico' | 'Laboratorio' {
-  if (tipo === 'publico') return 'Hospital';
-  return 'Clínica';
+  switch (tipo) {
+    case 'publico':
+      return 'Hospital';
+    case 'privado':
+      return 'Clínica';
+    default:
+      return 'Hospital';
+  }
 }
 
 // ============================================================================
@@ -164,37 +162,40 @@ function mapTipoClienteToAPI(tipo: string): 'Hospital' | 'Clínica' | 'Centro M�
 export function mapOrderToUI(order: Order): OrderUI {
   return {
     id: order.orden_id?.toString() || '',
+    equipo_id: order.equipo_id,
+    cliente_id: order.cliente_id,
     equipo: {
-      modelo: typeof order.equipo === 'object' ? order.equipo?.modelo || '' : '',
-      numeroSerie: typeof order.equipo === 'object' ? order.equipo?.numero_serie || '' : '',
-      fabricante: typeof order.equipo === 'object' && typeof order.equipo.fabricante === 'object' 
-        ? order.equipo.fabricante?.nombre || '' 
-        : '',
+      modelo: order.equipo?.modelo || '',
+      numeroSerie: order.equipo?.numero_serie || '',
+      fabricante: order.equipo?.fabricante?.nombre || '',
     },
-    cliente: typeof order.cliente === 'object' ? order.cliente?.nombre || '' : '',
-    prioridad: mapPrioridadToUI(order.prioridad || 'Media'),
-    estado: mapEstadoOrdenToUI(order.estado || 'Abierta'),
-    tipo: order.tipo || 'correctivo',
-    titulo: order.titulo || order.falla_reportada || 'Sin título',
-    descripcion: order.descripcion || order.falla_reportada || '',
-    fechaCreacion: order.fecha_apertura || order.fechaCreacion || new Date().toISOString().split('T')[0],
-    fechaVencimiento: order.fechaVencimiento,
-    tecnico: order.tecnico,
-    tiempoEstimado: order.tiempoEstimado || '2 horas',
+    cliente: order.cliente?.nombre || '',
+  prioridad: mapPrioridadToUI(order.prioridad || ''),
+  estado: mapEstadoOrdenToUI(order.estado || ''),
+    tipo: 'correctivo',
+    titulo: order.falla_reportada || '',
+    descripcion: order.falla_reportada || '',
+    fechaCreacion: order.fecha_apertura || '',
+    fechaVencimiento: '',
+    tecnico: '',
+    tiempoEstimado: '',
   };
 }
 
 /**
  * Convierte una orden del frontend al formato del backend
  */
-export function mapOrderToAPI(order: Partial<OrderUI>, equipoId?: number, clienteId?: number): Partial<Order> {
+export function mapOrderToAPI(order: Partial<OrderUI> & { equipo_id?: number; cliente_id?: number; }, extra?: { isEdit?: boolean }) {
+  // Usar los IDs reales del formulario
   return {
-    equipo_id: equipoId,
-    cliente_id: clienteId,
+    equipo_id: order.equipo_id,
+    cliente_id: order.cliente_id,
     prioridad: mapPrioridadToAPI(order.prioridad || 'normal'),
     estado: mapEstadoOrdenToAPI(order.estado || 'abierta'),
     falla_reportada: order.descripcion || order.titulo,
     fecha_apertura: order.fechaCreacion,
+    // Solo para edición: no enviar fecha_apertura si no se edita
+    ...(extra?.isEdit ? { fecha_apertura: undefined } : {}),
   };
 }
 
@@ -202,10 +203,17 @@ export function mapOrderToAPI(order: Partial<OrderUI>, equipoId?: number, client
  * Mapea la prioridad de la orden del backend al frontend
  */
 function mapPrioridadToUI(prioridad: string): 'critica' | 'alta' | 'normal' {
-  const prioridadLower = prioridad.toLowerCase();
-  if (prioridadLower.includes('crít') || prioridadLower.includes('crit')) return 'critica';
-  if (prioridadLower.includes('alta')) return 'alta';
-  return 'normal';
+  switch (prioridad) {
+    case 'Crítica':
+      return 'critica';
+    case 'Alta':
+      return 'alta';
+    case 'Media':
+    case 'Baja':
+      return 'normal';
+    default:
+      return 'normal';
+  }
 }
 
 /**
@@ -228,10 +236,19 @@ function mapPrioridadToAPI(prioridad: string): 'Baja' | 'Media' | 'Alta' | 'Crí
  * Mapea el estado de la orden del backend al frontend
  */
 function mapEstadoOrdenToUI(estado: string): 'abierta' | 'proceso' | 'cerrada' {
-  const estadoLower = estado.toLowerCase();
-  if (estadoLower.includes('cerrada')) return 'cerrada';
-  if (estadoLower.includes('proceso') || estadoLower.includes('asignada')) return 'proceso';
-  return 'abierta';
+  switch (estado) {
+    case 'Abierta':
+      return 'abierta';
+    case 'Asignada':
+    case 'En Proceso':
+    case 'En Espera':
+      return 'proceso';
+    case 'Cerrada':
+    case 'Cancelada':
+      return 'cerrada';
+    default:
+      return 'abierta';
+  }
 }
 
 /**
@@ -290,7 +307,7 @@ export function mapTecnicoToUI(tecnico: Tecnico) {
     telefono: tecnico.telefono || '',
     email: tecnico.email || '',
     base_ciudad: tecnico.base_ciudad || '',
-    activo: tecnico.activo === 1,
+    activo: !!tecnico.activo,
   };
 }
 
