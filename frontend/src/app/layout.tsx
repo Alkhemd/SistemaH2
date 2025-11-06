@@ -19,8 +19,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-          {/* Sidebar lateral con efecto de difuminación */}
+        <div className="min-h-screen">
+          {/* Sidebar lateral con efecto de glassmorphism */}
           <SidebarWithBlur />
           
           {/* Contenido principal con margen para el sidebar */}

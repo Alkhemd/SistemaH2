@@ -151,8 +151,8 @@ export const useClients = () => {
       setError(null);
       const { data, error } = await clientesService.getAll();
       if (error) throw error;
-  const mappedClients = Array.isArray(data) ? data.map((cl: any) => mapClientToUI(cl)) : [];
-  setClients(mappedClients);
+      const mappedClients = Array.isArray(data) ? data.map((cl: any) => mapClientToUI(cl)) : [];
+      setClients(mappedClients);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar clientes';
       setError(errorMessage);

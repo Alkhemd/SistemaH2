@@ -80,7 +80,7 @@ export default function SidebarWithBlur() {
         transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="fixed left-0 top-0 h-screen w-64 bg-white/70 backdrop-blur-2xl border-r border-gray-200/50 shadow-2xl shadow-gray-900/10 z-40"
+        className="fixed left-0 top-0 h-screen w-64 glass-morphism shadow-2xl shadow-gray-900/10 z-40"
       >
       {/* Header */}
       <motion.div 
@@ -107,9 +107,9 @@ export default function SidebarWithBlur() {
       </motion.div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-1">
-        <div className="mb-6">
-          <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+      <nav className="p-4 space-y-2">
+        <div className="mb-8" style={{ marginTop: '24px' }}>
+          <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3" style={{ marginBottom: '12px' }}>
             Principal
           </p>
           {navigation.map((item) => {
@@ -119,10 +119,10 @@ export default function SidebarWithBlur() {
                 key={item.name}
                 href={item.href}
                 className={`
-                  group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
+                  group relative flex items-center px-3 py-3 mb-3 text-sm font-medium rounded-xl transition-all duration-300
                   ${isActive 
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                    : 'text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 hover:scale-[1.02]'
+                    ? 'neuro-convex-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                    : 'neuro-convex-sm text-gray-700 hover:text-gray-900 hover:scale-[1.02]'
                   }
                 `}
               >
@@ -146,8 +146,8 @@ export default function SidebarWithBlur() {
         </div>
 
         {/* Catalogos */}
-        <div>
-          <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+        <div style={{ marginTop: '24px' }}>
+          <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ marginBottom: '12px' }}>
             Catálogos
           </p>
           {catalogos.map((item) => {
@@ -157,10 +157,10 @@ export default function SidebarWithBlur() {
                 key={item.name}
                 href={item.href}
                 className={`
-                  group relative flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300
+                  group relative flex items-center px-3 py-3 mb-3 text-sm font-medium rounded-xl transition-all duration-300
                   ${isActive 
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30' 
-                    : 'text-gray-700 hover:bg-gray-100/80 hover:text-gray-900 hover:scale-[1.02]'
+                    ? 'neuro-convex-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30' 
+                    : 'neuro-convex-sm text-gray-700 hover:text-gray-900 hover:scale-[1.02]'
                   }
                 `}
               >
@@ -186,8 +186,11 @@ export default function SidebarWithBlur() {
 
       {/* Footer */}
       <motion.div 
-        className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200/50 bg-white/30 backdrop-blur-xl cursor-pointer"
-        whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+        className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200/50 backdrop-blur-xl cursor-pointer neuro-convex-sm m-2 mb-4"
+        whileHover={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          transform: 'translateY(-1px)'
+        }}
         transition={{ duration: 0.2 }}
       >
         <div className="flex items-center space-x-3">

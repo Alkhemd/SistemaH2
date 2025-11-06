@@ -74,40 +74,47 @@ export default function ModalidadesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Modalidades</h1>
-          <p className="text-gray-600 mt-2">
-            Gestión de modalidades de equipos médicos
-          </p>
-        </div>
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
+          Modalidades
+        </h1>
+        <p className="text-lg neuro-text-secondary mb-4">
+          Gestión de modalidades de equipos médicos
+        </p>
         <button
           onClick={() => handleOpenModal('create')}
-          className="btn-primary flex items-center"
+          className="neuro-button-white"
         >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Nueva Modalidad
+          <PlusIcon className="h-5 w-5" />
+          <span>Nueva Modalidad</span>
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por código o descripción..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+      <div className="neuro-card-soft p-8 animate-fade-in">
+        <div className="flex items-center space-x-2 mb-6">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-secondary" />
+          <h3 className="font-semibold neuro-text-primary text-base">Búsqueda</h3>
+        </div>
+        <div className="neuro-input-wrapper">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+          <input
+            type="text"
+            placeholder="Buscar por código o descripción..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="neuro-input pl-14"
+          />
         </div>
       </div>
 
+      {/* Results count */}
+      <p className="neuro-text-tertiary text-sm">
+        {filteredModalidades.length} modalidades encontradas
+      </p>
+
       {/* Lista de Modalidades */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="neuro-card animate-fade-in">
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>

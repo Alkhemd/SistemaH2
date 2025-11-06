@@ -131,66 +131,44 @@ export default function EquiposPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <ScrollReveal enableBlur={false} baseOpacity={0.12} baseRotation={2} containerClassName="mb-2">
-            <SplitText text="Equipos" tag="h1" className="text-4xl font-bold text-gray-900" />
-          </ScrollReveal>
-          <p className="text-lg text-gray-600">
-            Gestión de equipos médicos
-          </p>
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
+          Gestión de equipos médicos
+        </h1>
+        <button 
+          onClick={openCreateModal}
+          className="neuro-button-white mt-4"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span>Nuevo Equipo</span>
+        </button>
+      </div>
+
+      {/* Filtros Section */}
+      <div className="neuro-card-soft p-8">
+        <div className="flex items-center space-x-2 mb-6">
+          <FunnelIcon className="w-5 h-5 neuro-text-secondary" />
+          <h3 className="font-semibold neuro-text-primary text-base">Búsqueda</h3>
         </div>
-
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-          >
-            {viewMode === 'grid' ? (
-              <ListBulletIcon className="icon-md" />
-            ) : (
-              <Squares2X2Icon className="icon-md" />
-            )}
-          </Button>
-
-          <button className="btn-primary" onClick={openCreateModal}>
-            <PlusIcon className="icon-sm mr-2" />
-            Nuevo Equipo
-          </button>
+        
+        <div className="grid grid-cols-1 gap-5">
+          <div className="neuro-input-wrapper">
+            <MagnifyingGlassIcon className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            <input
+              type="text"
+              placeholder="Buscar por modelo, fabricante, cliente o número de serie..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="neuro-input pl-14"
+            />
+          </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Search Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <Input
-          placeholder="Buscar equipos por modelo, fabricante, cliente o número de serie..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon={<MagnifyingGlassIcon className="icon-md" />}
-        />
-      </motion.div>
-
-      {/* Results Summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex items-center justify-between"
-      >
-        <p className="text-gray-600">
-          Mostrando {filteredEquipments.length} de {equipments.length} equipos
-        </p>
-      </motion.div>
+      {/* Results count */}
+      <p className="neuro-text-tertiary text-sm">
+        Mostrando {filteredEquipments.length} de {equipments.length} equipos
+      </p>
 
       {/* Equipment Grid */}
       <motion.div

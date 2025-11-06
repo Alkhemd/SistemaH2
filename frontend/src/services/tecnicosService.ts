@@ -27,9 +27,24 @@ class TecnicosService {
   }
 
   async create(data: Omit<Tecnico, 'tecnico_id'>): Promise<{ data: Tecnico | null; error: any }> {
+    // Obtener el máximo ID actual y sumarle 1
+    const { data: maxIdResult } = await supabase
+      .from('tecnico')
+      .select('tecnico_id')
+      .order('tecnico_id', { ascending: false })
+      .limit(1)
+      .single();
+    
+    const nextId = maxIdResult ? maxIdResult.tecnico_id + 1 : 1;
+    
+    const dataWithId = {
+      ...data,
+      tecnico_id: nextId
+    };
+    
     const { data: created, error } = await supabase
       .from('tecnico')
-      .insert([data])
+      .insert([dataWithId])
       .select()
       .single();
     if (error) {

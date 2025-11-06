@@ -75,34 +75,44 @@ export default function FabricantesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Fabricantes</h1>
-          <p className="text-gray-600 mt-1">Gestión de fabricantes de equipos médicos</p>
-        </div>
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
+          Fabricantes
+        </h1>
+        <p className="text-lg neuro-text-secondary mb-4">
+          Gestión de fabricantes de equipos médicos
+        </p>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2"
+          className="neuro-button-white"
         >
           <PlusIcon className="w-5 h-5" />
-          Nuevo Fabricante
+          <span>Nuevo Fabricante</span>
         </Button>
       </div>
 
       {/* Controles */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-            <Input
-              placeholder="Buscar fabricantes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10"
-            />
-          </div>
+      <div className="neuro-card-soft p-8 animate-fade-in">
+        <div className="flex items-center space-x-2 mb-6">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-secondary" />
+          <h3 className="font-semibold neuro-text-primary text-base">Búsqueda</h3>
+        </div>
+        <div className="neuro-input-wrapper">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+          <input
+            type="text"
+            placeholder="Buscar fabricantes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="neuro-input pl-14"
+          />
         </div>
       </div>
+
+      {/* Results count */}
+      <p className="neuro-text-tertiary text-sm">
+        {filteredFabricantes.length} fabricantes encontrados
+      </p>
 
       {/* Lista de fabricantes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

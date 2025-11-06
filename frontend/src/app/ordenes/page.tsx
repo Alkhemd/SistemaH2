@@ -310,75 +310,45 @@ export default function OrdenesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col sm-flex-row sm-items-center sm-justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-4xl font-bold text-[#1D1D1F] mb-2">
-            Órdenes de Trabajo
-          </h1>
-          <p className="text-lg text-[#6E6E73]">
-            Gestión de órdenes de mantenimiento y reparación
-          </p>
-        </div>
-
-        <motion.button 
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
+          Órdenes de Trabajo
+        </h1>
+        <p className="text-lg neuro-text-secondary mb-4">
+          Gestión de órdenes de mantenimiento y reparación
+        </p>
+        <button 
           onClick={() => setIsModalOpen(true)}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="btn-primary flex items-center space-x-2"
+          className="neuro-button-white"
         >
-          <Plus size={18} />
+          <Plus className="w-5 h-5" />
           <span>Nueva Orden</span>
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="card"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Filter size={20} className="text-[#6E6E73]" />
-            <h3 className="font-semibold text-[#1D1D1F]">Filtros</h3>
-          </div>
-          
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-[#6E6E73] hover:text-[#FF3B30] transition-colors duration-200 text-sm font-medium"
-            >
-              Limpiar filtros
-            </button>
-          )}
+      {/* Filtros */}
+      <div className="neuro-card-soft p-8">
+        <div className="flex items-center space-x-2 mb-6">
+          <Filter className="w-5 h-5 neuro-text-secondary" />
+          <h3 className="font-semibold neuro-text-primary text-base">Filtros</h3>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {/* Search */}
-          <div className="lg:col-span-2 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-[#86868B]" />
-            </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="neuro-input-wrapper">
+            <Search className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
             <input
               type="text"
               placeholder="Buscar órdenes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10 w-full"
+              className="neuro-input pl-14"
             />
           </div>
 
-          {/* Priority Filter */}
           <select
             value={selectedPrioridad}
             onChange={(e) => setSelectedPrioridad(e.target.value)}
-            className="input-field"
+            className="neuro-input"
           >
             <option value="">Todas las prioridades</option>
             <option value="critica">Crítica</option>
@@ -386,11 +356,10 @@ export default function OrdenesPage() {
             <option value="normal">Normal</option>
           </select>
 
-          {/* Status Filter */}
           <select
             value={selectedEstado}
             onChange={(e) => setSelectedEstado(e.target.value)}
-            className="input-field"
+            className="neuro-input"
           >
             <option value="">Todos los estados</option>
             <option value="abierta">Abierta</option>
@@ -398,11 +367,10 @@ export default function OrdenesPage() {
             <option value="cerrada">Cerrada</option>
           </select>
 
-          {/* Type Filter */}
           <select
             value={selectedTipo}
             onChange={(e) => setSelectedTipo(e.target.value)}
-            className="input-field"
+            className="neuro-input"
           >
             <option value="">Todos los tipos</option>
             <option value="correctivo">Correctivo</option>
@@ -410,35 +378,18 @@ export default function OrdenesPage() {
             <option value="calibracion">Calibración</option>
           </select>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Results Count */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex items-center justify-between text-sm text-[#6E6E73]"
-      >
-        <span>
-          {filteredOrders.length} órdenes encontradas
-        </span>
-        {filteredOrders.length !== orders.length && (
-          <span>
-            de {orders.length} total
-          </span>
-        )}
-      </motion.div>
+      {/* Results count */}
+      <p className="neuro-text-tertiary text-sm">
+        {filteredOrders.length} órdenes encontradas
+      </p>
 
       {/* Orders Table */}
       {isLoadingOrders ? (
         <SkeletonTable rows={8} />
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="card overflow-hidden"
-        >
+        <div className="neuro-card overflow-hidden animate-fade-in">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -593,18 +544,13 @@ export default function OrdenesPage() {
             </button>
           </div>
         )}
-        </motion.div>
+        </div>
       )}
 
       {/* Pagination */}
       {filteredOrders.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex justify-center pt-4"
-        >
-          <div className="flex items-center space-x-2 text-[#6E6E73]">
+        <div className="flex justify-center pt-4 animate-fade-in">
+          <div className="flex items-center space-x-2 neuro-text-secondary">
             <button className="px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200">
               ←
             </button>
@@ -615,7 +561,7 @@ export default function OrdenesPage() {
               →
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Modal Nueva Orden */}

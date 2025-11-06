@@ -65,14 +65,14 @@ export function mapEquipmentToUI(equipment: any): EquipmentUI {
   };
 }
 
-export function mapEquipmentToAPI(equipment: EquipmentUI) {
+export function mapEquipmentToAPI(equipment: Partial<EquipmentUI> | Omit<EquipmentUI, 'id'>) {
   return {
     modelo: equipment.modelo,
     numero_serie: equipment.numeroSerie,
     cliente_id: equipment.cliente_id,
     modalidad_id: equipment.modalidad_id,
     fabricante_id: equipment.fabricante_id,
-    estado_equipo: mapEstadoEquipoToAPI(equipment.estado || ''),
+    estado_equipo: equipment.estado ? mapEstadoEquipoToAPI(equipment.estado) : undefined,
     ubicacion: equipment.ubicacion,
     fecha_instalacion: equipment.fechaInstalacion,
     ultima_calibracion: equipment.ultimaCalibacion,
@@ -89,6 +89,23 @@ export function mapEquipmentToAPI(equipment: EquipmentUI) {
  * Convierte un cliente del backend al formato del frontend
  */
 export function mapClientToUI(client: any): ClientUI {
+  // Manejar el campo contacto que puede ser string o JSON
+  let responsable = '';
+  if (typeof client.contacto === 'string') {
+    // Si es string simple, usarlo como responsable
+    try {
+      // Intentar parsear por si es un JSON string
+      const parsed = JSON.parse(client.contacto);
+      responsable = parsed.responsable || parsed.telefono || client.contacto;
+    } catch {
+      // Si no es JSON, usar el string directamente
+      responsable = client.contacto;
+    }
+  } else if (typeof client.contacto === 'object' && client.contacto !== null) {
+    // Si es objeto, extraer el responsable
+    responsable = client.contacto.responsable || '';
+  }
+
   return {
     id: client.cliente_id?.toString() || '',
     nombre: client.nombre || '',
@@ -98,10 +115,10 @@ export function mapClientToUI(client: any): ClientUI {
     contacto: {
       telefono: client.telefono || '',
       email: client.email || '',
-      responsable: client.contacto || '',
+      responsable: responsable || 'Sin responsable',
     },
-    estado_cliente: 'activo',
-    equiposCount: Array.isArray(client.equipos) ? client.equipos.length : 0,
+    estado_cliente: 'activo', // Por defecto activo, no existe en BD
+    equiposCount: client.equipos_count || 0, // Usar el conteo de la query
     fechaRegistro: '',
     ultimaActividad: new Date().toISOString().split('T')[0],
   };

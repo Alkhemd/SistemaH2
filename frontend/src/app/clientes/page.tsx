@@ -35,7 +35,7 @@ export default function ClientesPage() {
   const { clients, createClient, updateClient, deleteClient } = useClients();
 
   const filteredClients = useMemo(() => {
-    return clients.filter(client => {
+    const filtered = clients.filter(client => {
       const matchesSearch = searchTerm === '' || 
         client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.ciudad.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,6 +47,8 @@ export default function ClientesPage() {
 
       return matchesSearch && matchesTipo && matchesEstado;
     });
+    
+    return filtered;
   }, [clients, searchTerm, selectedTipo, selectedEstado]);
 
   const clearFilters = () => {
@@ -113,63 +115,36 @@ export default function ClientesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div
-        variants={fade}
-        initial="hidden"
-        animate="visible"
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <ScrollReveal enableBlur={true} baseOpacity={0.15} baseRotation={2} containerClassName="mb-2">
-            <SplitText text="Clientes" tag="h1" className="text-4xl font-bold text-[#1D1D1F]" />
-          </ScrollReveal>
-          <p className="text-lg text-[#6E6E73]">
-            Gestión de hospitales y clínicas
-          </p>
-        </div>
-
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
+          Gestión de hospitales y clínicas
+        </h1>
         <button 
-          className="btn-primary flex items-center space-x-2"
+          className="neuro-button-white mt-4"
           onClick={openCreateModal}
         >
-          <PlusIcon className="icon-sm" />
+          <PlusIcon className="w-5 h-5" />
           <span>Nuevo Cliente</span>
         </button>
-      </motion.div>
+      </div>
 
-      {/* Search and Filters */}
-      <motion.div
-        variants={slideUp}
-        initial="hidden"
-        animate="visible"
-        transition={{ duration: 0.45, delay: 0.1 }}
-        className="card"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-[#1D1D1F]">Filtros</h3>
-          
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-[#6E6E73] hover:text-[#FF3B30] transition-colors duration-200 text-sm font-medium"
-            >
-              Limpiar filtros
-            </button>
-          )}
+      {/* Filtros */}
+      <div className="neuro-card-soft p-8">
+        <div className="flex items-center space-x-2 mb-6">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-secondary" />
+          <h3 className="font-semibold neuro-text-primary text-base">Filtros</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Search */}
-          <div className="md:col-span-2 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="icon-md text-[#86868B]" />
-            </div>
+          <div className="md:col-span-2 neuro-input-wrapper">
+            <MagnifyingGlassIcon className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
             <input
               type="text"
               placeholder="Buscar clientes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10 w-full"
+              className="neuro-input pl-14"
             />
           </div>
 
@@ -177,7 +152,7 @@ export default function ClientesPage() {
           <select
             value={selectedTipo}
             onChange={(e) => setSelectedTipo(e.target.value)}
-            className="input-field"
+            className="neuro-input"
           >
             <option value="">Todos los tipos</option>
             <option value="publico">Público</option>
@@ -188,31 +163,22 @@ export default function ClientesPage() {
           <select
             value={selectedEstado}
             onChange={(e) => setSelectedEstado(e.target.value)}
-            className="input-field"
+            className="neuro-input"
           >
             <option value="">Todos los estados</option>
             <option value="activo">Activo</option>
             <option value="inactivo">Inactivo</option>
           </select>
         </div>
-      </motion.div>
+      </div>
 
       {/* Results Count */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex items-center justify-between text-sm text-[#6E6E73]"
-      >
-        <span>
-          {filteredClients.length} clientes encontrados
-        </span>
+      <p className="neuro-text-tertiary text-sm">
+        {filteredClients.length} clientes encontrados
         {filteredClients.length !== clients.length && (
-          <span>
-            de {clients.length} total
-          </span>
+          <span> de {clients.length} total</span>
         )}
-      </motion.div>
+      </p>
 
       {/* Clients List */}
       <motion.div
@@ -367,19 +333,19 @@ export default function ClientesPage() {
                 <div className="space-y-3">
                   <div>
                     <span className="text-sm font-medium text-gray-600">Nombre:</span>
-                    <p className="text-gray-900">{selectedClient.nombre}</p>
+                    <p className="text-gray-900">{selectedClient!.nombre}</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Tipo:</span>
-                    <p className="text-gray-900">{selectedClient.tipo === 'publico' ? 'Público' : 'Privado'}</p>
+                    <p className="text-gray-900">{selectedClient!.tipo === 'publico' ? 'Público' : 'Privado'}</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Ciudad:</span>
-                    <p className="text-gray-900">{selectedClient.ciudad}</p>
+                    <p className="text-gray-900">{selectedClient!.ciudad}</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Estado:</span>
-                    <p className="text-gray-900">{selectedClient.estado}</p>
+                    <p className="text-gray-900">{selectedClient!.estado}</p>
                   </div>
                 </div>
               </div>
@@ -388,19 +354,19 @@ export default function ClientesPage() {
                 <div className="space-y-3">
                   <div>
                     <span className="text-sm font-medium text-gray-600">Responsable:</span>
-                    <p className="text-gray-900">{selectedClient.contacto.responsable}</p>
+                    <p className="text-gray-900">{selectedClient!.contacto?.responsable || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Teléfono:</span>
-                    <p className="text-gray-900">{selectedClient.contacto.telefono}</p>
+                    <p className="text-gray-900">{selectedClient!.contacto?.telefono || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Email:</span>
-                    <p className="text-gray-900">{selectedClient.contacto.email}</p>
+                    <p className="text-gray-900">{selectedClient!.contacto?.email || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Equipos:</span>
-                    <p className="text-gray-900">{selectedClient.equiposCount} equipos</p>
+                    <p className="text-gray-900">{selectedClient!.equiposCount || 0} equipos</p>
                   </div>
                 </div>
               </div>
@@ -408,7 +374,7 @@ export default function ClientesPage() {
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <button 
                 className="btn-ghost"
-                onClick={() => handleEditClient(selectedClient)}
+                onClick={() => selectedClient && handleEditClient(selectedClient)}
               >
                 Editar
               </button>
@@ -425,7 +391,7 @@ export default function ClientesPage() {
           </div>
         ) : (
           <ClientForm 
-            client={modalType === 'edit' && selectedClient ? selectedClient : undefined}
+            client={modalType === 'edit' && selectedClient ? selectedClient! : undefined}
             onSubmit={modalType === 'edit' ? handleUpdateClient : handleCreateClient}
             onCancel={() => {
               setModalOpen(false);

@@ -3,36 +3,62 @@
 
 @layer base {
   * {
-    @apply box-border;
+    box-sizing: border-box;
   }
 
   :root {
-    --background: #FFFFFF;
-    --foreground: #1D1D1F;
-    --surface: #F5F5F7;
-    --surface-elevated: #FFFFFF;
+    /* ===== NEUMORFISMO PROFUNDO - SISTEMA DE COLORES ===== */
+    /* Color base off-white para eliminar la planitud */
+    --neuro-background: #E8EBF0;
+    --neuro-surface: #E8EBF0;
+    --neuro-surface-elevated: #F0F3F7;
     
-    /* Textos */
-    --text-primary: #1D1D1F;
-    --text-secondary: #6E6E73;
-    --text-tertiary: #86868B;
+    /* Gradientes sutiles para profundidad */
+    --neuro-gradient-main: linear-gradient(145deg, #E8EBF0, #F5F7FA);
+    --neuro-gradient-reverse: linear-gradient(145deg, #F5F7FA, #E8EBF0);
     
-    /* Acento */
-    --accent-primary: #0071E3;
-    --accent-hover: #0077ED;
-    --accent-pressed: #006EDB;
+    /* Sistema de sombras neumórficas */
+    --neuro-shadow-light: #FFFFFF;  /* Luz superior izquierda */
+    --neuro-shadow-dark: #A3B1C6;   /* Sombra inferior derecha */
     
-    /* Estados */
-    --success: #34C759;
-    --warning: #FF9500;
-    --error: #FF3B30;
-    --info: #007AFF;
+    /* Sombras convexas (elementos que salen) */
+    --neuro-shadow-convex: 
+      18px 18px 36px rgba(163, 177, 198, 0.5),
+      -18px -18px 36px rgba(255, 255, 255, 0.9);
     
-    /* Sombras */
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --shadow-xl: 0 16px 48px rgba(0,0,0,0.16);
+    /* Sombras cóncavas (elementos hundidos) */  
+    --neuro-shadow-concave: 
+      inset 18px 18px 36px rgba(163, 177, 198, 0.4),
+      inset -18px -18px 36px rgba(255, 255, 255, 0.7);
+      
+    /* Sombras más sutiles para elementos pequeños */
+    --neuro-shadow-convex-sm: 
+      8px 8px 16px rgba(163, 177, 198, 0.4),
+      -8px -8px 16px rgba(255, 255, 255, 0.8);
+      
+    --neuro-shadow-concave-sm: 
+      inset 8px 8px 16px rgba(163, 177, 198, 0.4),
+      inset -8px -8px 16px rgba(255, 255, 255, 0.7);
+    
+    /* Textos adaptados al fondo neumórfico */
+    --text-primary: #2D3748;
+    --text-secondary: #4A5568;
+    --text-tertiary: #718096;
+    
+    /* Acentos que contrasten con el fondo neumórfico */
+    --accent-primary: #4299E1;
+    --accent-hover: #3182CE;
+    --accent-pressed: #2B77CB;
+    
+    /* Estados adaptados */
+    --success: #38A169;
+    --warning: #D69E2E;
+    --error: #E53E3E;
+    --info: #3182CE;
+    
+    /* Glassmorphism para el sidebar */
+    --glass-background: rgba(240, 245, 250, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.2);
   }
 }
 
@@ -45,9 +71,258 @@
   }
 
   body {
-    @apply bg-white text-gray-900 min-h-screen;
+    background: var(--neuro-background);
+    background-image: var(--neuro-gradient-main);
+    color: var(--text-primary);
+    min-height: 100vh;
   }
 }
+
+/* ===== UTILIDADES NEUMÓRFICAS ===== */
+@layer utilities {
+  /* Efectos convexos (elementos que salen) */
+  .neuro-convex {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-main);
+    box-shadow: var(--neuro-shadow-convex);
+    border-radius: 30px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .neuro-convex-sm {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-main);
+    box-shadow: var(--neuro-shadow-convex-sm);
+    border-radius: 15px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Efectos cóncavos (elementos hundidos) */
+  .neuro-concave {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-reverse);
+    box-shadow: var(--neuro-shadow-concave);
+    border-radius: 30px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .neuro-concave-sm {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-reverse);
+    box-shadow: var(--neuro-shadow-concave-sm);
+    border-radius: 15px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Estados de botones */
+  .neuro-button {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-main);
+    box-shadow: var(--neuro-shadow-convex-sm);
+    border-radius: 15px;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    border: none;
+    outline: none;
+  }
+  
+  .neuro-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      10px 10px 20px var(--neuro-shadow-dark),
+      -10px -10px 20px var(--neuro-shadow-light);
+  }
+  
+  .neuro-button:active {
+    transform: translateY(0);
+    background-image: var(--neuro-gradient-reverse);
+    box-shadow: var(--neuro-shadow-concave-sm);
+  }
+  
+  /* Campos de entrada cóncavos */
+  .neuro-input {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-reverse);
+    box-shadow: var(--neuro-shadow-concave-sm);
+    border-radius: 15px;
+    transition: all 0.2s ease-in-out;
+    border: none;
+    outline: none;
+    background-color: var(--neuro-surface);
+  }
+  
+  .neuro-input:focus {
+    box-shadow: 
+      inset 6px 6px 12px var(--neuro-shadow-dark),
+      inset -6px -6px 12px var(--neuro-shadow-light),
+      0 0 0 3px rgba(66, 153, 225, 0.1);
+  }
+  
+  /* Glassmorphism para sidebar */
+  .glass-morphism {
+    background: var(--glass-background);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--glass-border);
+  }
+  
+  /* Elementos de texto sobre fondo neumórfico */
+  .neuro-text-primary {
+    color: var(--text-primary);
+  }
+  
+  .neuro-text-secondary {
+    color: var(--text-secondary);
+  }
+  
+  /* Elementos específicos de la interfaz */
+  .neuro-modal {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-main);
+    border-radius: 30px;
+    box-shadow: var(--neuro-shadow-convex);
+    border: none;
+  }
+  
+  .neuro-container {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-main);
+    border-radius: 30px;
+    box-shadow: var(--neuro-shadow-convex);
+    padding: 2rem;
+  }
+  
+  /* Selectores y dropdowns */
+  .neuro-select {
+    background: var(--neuro-surface);
+    background-image: var(--neuro-gradient-reverse);
+    border: none;
+    border-radius: 15px;
+    box-shadow: var(--neuro-shadow-concave-sm);
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .neuro-select:focus {
+    box-shadow: 
+      inset 6px 6px 12px var(--neuro-shadow-dark),
+      inset -6px -6px 12px var(--neuro-shadow-light),
+      0 0 0 3px rgba(66, 153, 225, 0.1);
+  }
+
+  /* Botón blanco con neumorfismo */
+  .neuro-button-white {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: #1a1a1a;
+    background: #E8EBF0;
+    background-image: linear-gradient(145deg, #F5F7FA, #E8EBF0);
+    box-shadow: 
+      9px 9px 18px rgba(163, 177, 198, 0.5),
+      -9px -9px 18px rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .neuro-button-white:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      12px 12px 24px rgba(163, 177, 198, 0.55),
+      -12px -12px 24px rgba(255, 255, 255, 0.95);
+  }
+
+  .neuro-button-white:active {
+    transform: translateY(0);
+    background-image: linear-gradient(145deg, #E8EBF0, #F5F7FA);
+    box-shadow: 
+      inset 5px 5px 10px rgba(163, 177, 198, 0.4),
+      inset -5px -5px 10px rgba(255, 255, 255, 0.7);
+  }
+
+  /* Contenedor de input con neumorfismo */
+  .neuro-input-wrapper {
+    position: relative;
+  }
+
+  /* Input fields con neumorfismo - Mejorado con más espacio */
+  .neuro-input {
+    background: #E8EBF0;
+    border: none;
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #1D1D1F;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      inset 4px 4px 8px rgba(163, 177, 198, 0.6),
+      inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+    outline: none;
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .neuro-input:focus {
+    background: #E0E5EC;
+    box-shadow: 
+      inset 5px 5px 10px rgba(163, 177, 198, 0.7),
+      inset -5px -5px 10px rgba(255, 255, 255, 0.6),
+      0 0 0 3px rgba(0, 113, 227, 0.1);
+  }
+
+  .neuro-input::placeholder {
+    color: #9BA6B8;
+  }
+
+  /* Select mejorado */
+  select.neuro-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239BA6B8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-color: #E8EBF0;
+    padding-right: 44px;
+    cursor: pointer;
+  }
+
+  select.neuro-input:hover {
+    background-color: #E0E5EC;
+    box-shadow: 
+      inset 4px 4px 9px rgba(163, 177, 198, 0.65),
+      inset -4px -4px 9px rgba(255, 255, 255, 0.55);
+  }
+
+  /* Card suave con neumorfismo */
+  .neuro-card-soft {
+    background: #E8EBF0;
+    background-image: linear-gradient(145deg, #E8EBF0, #F5F7FA);
+    box-shadow: 
+      8px 8px 16px rgba(163, 177, 198, 0.4),
+      -8px -8px 16px rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .neuro-card-soft:hover {
+    box-shadow: 
+      10px 10px 20px rgba(163, 177, 198, 0.45),
+      -10px -10px 20px rgba(255, 255, 255, 0.85);
+  }
+
+  /* Texto terciario */
+  .neuro-text-tertiary {
+    color: #8B95A5;
+  }
+}
+
 
 /* Apple-style backdrop blur support */
 @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
@@ -110,20 +385,24 @@ main {
   min-height: calc(100vh - 20rem); /* Ajustamos para el menú centrado */
 }
 
-/* Cards mejoradas */
+/* ===== TARJETAS NEUMÓRFICAS ===== */
 .card {
-  background: white;
-  border-radius: 1.5rem;
-  border: 1px solid #E5E5E7;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-  transition: all 0.3s ease;
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
+  border-radius: 30px;
+  border: none;
+  box-shadow: var(--neuro-shadow-convex);
+  transition: all 0.2s ease-in-out;
   overflow: hidden;
-  padding: 1.5rem;
+  padding: 2rem;
+  position: relative;
 }
 
 .card:hover {
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.06);
   transform: translateY(-2px);
+  box-shadow: 
+    25px 25px 50px var(--neuro-shadow-dark),
+    -25px -25px 50px var(--neuro-shadow-light);
 }
 
 /* Formularios con scroll */
@@ -203,41 +482,53 @@ main {
 .bg-gray-50 { background-color: #F5F5F7; }
 .bg-gray-100 { background-color: #F2F2F7; }
 
-/* Buttons mejorados */
+/* ===== BOTONES NEUMÓRFICOS ===== */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+  background: var(--neuro-surface);
+  background-image: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
   color: white;
   border: none;
   padding: 1rem 2rem;
-  border-radius: 1rem;
+  border-radius: 15px;
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2);
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--neuro-shadow-convex-sm);
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
   min-height: 3rem;
   line-height: 1.5;
+  position: relative;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--accent-hover), var(--accent-pressed));
-  box-shadow: 0 4px 16px rgba(0, 113, 227, 0.3);
-  transform: translateY(-2px);
+  background-image: linear-gradient(135deg, var(--accent-hover), var(--accent-pressed));
+  transform: translateY(-1px);
+  box-shadow: 
+    10px 10px 20px var(--neuro-shadow-dark),
+    -10px -10px 20px var(--neuro-shadow-light);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--neuro-shadow-concave-sm);
+  background-image: linear-gradient(135deg, var(--accent-pressed), var(--accent-hover));
 }
 
 .btn-ghost {
-  background: transparent;
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
   color: var(--text-secondary);
-  border: 1px solid transparent;
+  border: none;
   padding: 0.75rem 1.25rem;
-  border-radius: 1rem;
+  border-radius: 15px;
   font-weight: 500;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--neuro-shadow-convex-sm);
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -245,21 +536,31 @@ main {
 }
 
 .btn-ghost:hover {
-  background: var(--surface);
   color: var(--text-primary);
   transform: translateY(-1px);
+  box-shadow: 
+    8px 8px 16px var(--neuro-shadow-dark),
+    -8px -8px 16px var(--neuro-shadow-light);
+}
+
+.btn-ghost:active {
+  transform: translateY(0);
+  box-shadow: var(--neuro-shadow-concave-sm);
+  background-image: var(--neuro-gradient-reverse);
 }
 
 .btn-secondary {
-  background: var(--surface);
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
   color: var(--text-primary);
-  border: 1.5px solid #E5E5E7;
+  border: none;
   padding: 1rem 1.75rem;
-  border-radius: 1rem;
+  border-radius: 15px;
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--neuro-shadow-convex-sm);
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
@@ -267,24 +568,34 @@ main {
 }
 
 .btn-secondary:hover {
-  background: #E5E5E7;
-  border-color: #D1D1D6;
   transform: translateY(-1px);
+  box-shadow: 
+    10px 10px 20px var(--neuro-shadow-dark),
+    -10px -10px 20px var(--neuro-shadow-light);
 }
 
-/* Cards */
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: var(--neuro-shadow-concave-sm);
+  background-image: var(--neuro-gradient-reverse);
+}
+
+/* Cards neumórficas (definición actualizada) */
 .card {
-  background: white;
-  border-radius: 1rem;
-  border: 1px solid #E5E5E7;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
+  border-radius: 30px;
+  border: none;
+  box-shadow: var(--neuro-shadow-convex);
+  transition: all 0.2s ease-in-out;
   overflow: hidden;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+  box-shadow: 
+    25px 25px 50px var(--neuro-shadow-dark),
+    -25px -25px 50px var(--neuro-shadow-light);
 }
 
 .p-6 { padding: 1.5rem; }
@@ -389,6 +700,11 @@ main {
   to { opacity: 1; }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -416,7 +732,17 @@ main {
   to { transform: rotate(360deg); }
 }
 
-.bg-gray-200 { background-color: #E5E5E7; }
+/* Overrides para compatibilidad con neumorfismo */
+.bg-gray-200 { 
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
+}
+
+.text-gray-300 { color: var(--text-tertiary); }
+.text-gray-600 { color: var(--text-secondary); }
+.text-gray-900 { color: var(--text-primary); }
+
+/* Utilidades de tamaño */
 .rounded { border-radius: 0.25rem; }
 .h-10 { height: 2.5rem; }
 .h-6 { height: 1.5rem; }
@@ -428,7 +754,6 @@ main {
 .h-4 { height: 1rem; }
 .w-16 { width: 4rem; }
 .h-16 { height: 4rem; }
-.text-gray-300 { color: #D1D1D6; }
 .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
 .text-center { text-align: center; }
 
@@ -763,17 +1088,18 @@ select.input-field {
 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-/* Componentes personalizados */
+/* ===== COMPONENTES NEUMÓRFICOS (DUPLICADO ACTUALIZADO) ===== */
 .btn-primary {
-  background-color: var(--accent-primary);
+  background: var(--neuro-surface);
+  background-image: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
   color: white;
-  font-weight: 500;
+  font-weight: 600;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
+  border-radius: 15px;
   border: none;
   cursor: pointer;
-  transition: all 200ms ease;
-  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--neuro-shadow-convex-sm);
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -781,21 +1107,29 @@ select.input-field {
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-hover);
-  box-shadow: var(--shadow-md);
+  background-image: linear-gradient(135deg, var(--accent-hover), var(--accent-pressed));
   transform: translateY(-1px);
+  box-shadow: 
+    10px 10px 20px var(--neuro-shadow-dark),
+    -10px -10px 20px var(--neuro-shadow-light);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--neuro-shadow-concave-sm);
 }
 
 .btn-secondary {
-  background-color: white;
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  border: 1px solid #E5E7EB;
+  border-radius: 15px;
+  border: none;
   cursor: pointer;
-  transition: all 200ms ease;
-  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--neuro-shadow-convex-sm);
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -803,53 +1137,76 @@ select.input-field {
 }
 
 .btn-secondary:hover {
-  background-color: #F9FAFB;
+  transform: translateY(-1px);
+  box-shadow: 
+    8px 8px 16px var(--neuro-shadow-dark),
+    -8px -8px 16px var(--neuro-shadow-light);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: var(--neuro-shadow-concave-sm);
+  background-image: var(--neuro-gradient-reverse);
 }
 
 .card {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  transition: all 300ms ease;
-  box-shadow: var(--shadow-sm);
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
+  border-radius: 30px;
+  border: none;
+  padding: 2rem;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--neuro-shadow-convex);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+  box-shadow: 
+    25px 25px 50px var(--neuro-shadow-dark),
+    -25px -25px 50px var(--neuro-shadow-light);
 }
 
 .input-field {
   width: 100%;
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid #E5E7EB;
+  border-radius: 15px;
+  border: none;
   outline: none;
-  transition: all 200ms ease;
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-reverse);
+  box-shadow: var(--neuro-shadow-concave-sm);
+  transition: all 0.2s ease-in-out;
   min-height: 48px;
   font-size: 1rem;
+  color: var(--text-primary);
 }
 
 .input-field:focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 
+    inset 6px 6px 12px var(--neuro-shadow-dark),
+    inset -6px -6px 12px var(--neuro-shadow-light),
+    0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
 .equipment-card {
   width: 280px;
   height: 340px;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  background: white;
-  box-shadow: var(--shadow-sm);
-  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2rem;
+  border-radius: 30px;
+  background: var(--neuro-surface);
+  background-image: var(--neuro-gradient-main);
+  box-shadow: var(--neuro-shadow-convex);
+  transition: all 0.2s ease-in-out;
   cursor: pointer;
   position: relative;
+  border: none;
 }
 
 .equipment-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+  box-shadow: 
+    25px 25px 50px var(--neuro-shadow-dark),
+    -25px -25px 50px var(--neuro-shadow-light);
 }
 
 /* Responsive */

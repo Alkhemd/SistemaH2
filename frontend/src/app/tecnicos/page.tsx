@@ -95,31 +95,44 @@ export default function TecnicosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Técnicos</h1>
-          <p className="text-gray-600 mt-1">Gestión de técnicos especializados</p>
-        </div>
+      <div className="animate-fade-in">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
+          Técnicos
+        </h1>
+        <p className="text-lg neuro-text-secondary mb-4">
+          Gestión de técnicos especializados
+        </p>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2"
+          className="neuro-button-white"
         >
           <PlusIcon className="w-5 h-5" />
-          Nuevo Técnico
+          <span>Nuevo Técnico</span>
         </Button>
       </div>
 
       {/* Controles */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input
+      <div className="neuro-card-soft p-8 animate-fade-in">
+        <div className="flex items-center space-x-2 mb-6">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-secondary" />
+          <h3 className="font-semibold neuro-text-primary text-base">Búsqueda</h3>
+        </div>
+        <div className="neuro-input-wrapper">
+          <MagnifyingGlassIcon className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+          <input
+            type="text"
             placeholder="Buscar técnicos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full"
+            className="neuro-input pl-14"
           />
         </div>
       </div>
+
+      {/* Results count */}
+      <p className="neuro-text-tertiary text-sm">
+        {filteredTecnicos.length} técnicos encontrados
+      </p>
 
       {/* Lista de técnicos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

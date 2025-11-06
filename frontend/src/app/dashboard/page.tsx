@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { dashboardApi } from '@/lib/api';
+import { dashboardService } from '@/services/dashboardService';
+import { testSupabaseConnection } from '@/utils/testSupabase';
 import {
   CubeIcon,
   ExclamationTriangleIcon,
@@ -22,23 +23,35 @@ export default function DashboardPage() {
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
-        const statsResponse = await dashboardApi.getEstadisticas();
         
-        // Mapear las estadísticas del backend al formato esperado
-        const statsData = statsResponse.data.data || statsResponse.data;
-        const mappedStats = {
-          totalEquipments: statsData?.totalEquipos || 0,
-          openOrders: statsData?.ordenesAbiertas || 0,
-          maintenanceEquipments: statsData?.equiposMantenimiento || 0,
-          operativeEquipments: statsData?.equiposOperativos || 0,
-        };
+        // Probar conexión con Supabase
+        await testSupabaseConnection();
+        
+        // Obtener estadísticas desde Supabase
+        console.log('🔍 Cargando estadísticas del dashboard...');
+        const statsResponse = await dashboardService.getEstadisticas();
+        
+        console.log('📊 Respuesta de estadísticas:', statsResponse);
+        
+        if (statsResponse.error) {
+          console.error('❌ Error en statsResponse:', statsResponse.error);
+          throw new Error(statsResponse.error.message);
+        }
 
-        setStats(mappedStats);
+        console.log('✅ Datos de estadísticas:', statsResponse.data);
+        setStats(statsResponse.data);
         
-        // Cargar actividad reciente
-        const activityResponse = await dashboardApi.getActividadReciente();
-        const activityData = activityResponse.data.data || activityResponse.data;
-        setRecentActivity(activityData || []);
+        // Cargar actividad reciente desde Supabase
+        console.log('🔍 Cargando actividad reciente...');
+        const activityResponse = await dashboardService.getActividadReciente();
+        
+        if (activityResponse.error) {
+          console.warn('⚠️ Error al cargar actividad reciente:', activityResponse.error);
+          setRecentActivity([]);
+        } else {
+          console.log('✅ Actividad reciente:', activityResponse.data);
+          setRecentActivity(activityResponse.data || []);
+        }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
         showToast.error('Error al cargar estadísticas del dashboard');
@@ -79,17 +92,22 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="animate-fade-in">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <h1 className="text-4xl font-bold neuro-text-primary mb-2">
           Dashboard
         </h1>
-        <p className="text-lg text-gray-600">
+        <p className="text-lg neuro-text-secondary">
           Vista general del sistema de gestión médica
         </p>
+        {stats && (
+          <p className="text-sm neuro-text-tertiary mt-2">
+            Datos cargados: {stats.totalEquipments} equipos, {stats.openOrders} órdenes, {stats.maintenanceEquipments} en mantenimiento, {stats.operativeEquipments} operativos
+          </p>
+        )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
-        {stats && [
+        {stats ? [
           {
             title: 'Total Equipos',
             value: stats?.totalEquipments?.toString() || '0',
@@ -127,15 +145,15 @@ export default function DashboardPage() {
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">
+                  <p className="text-sm font-medium neuro-text-secondary mb-1">
                     {stat.title}
                   </p>
-                  <p className="text-4xl font-bold text-gray-900 mb-2">
+                  <p className="text-4xl font-bold neuro-text-primary mb-2">
                     {stat.value}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-gray-50 rounded-xl icon-container">
-                  <stat.icon className="icon-md text-gray-600" />
+                <div className="w-12 h-12 neuro-convex-sm flex items-center justify-center">
+                  <stat.icon className="w-6 h-6 neuro-text-secondary" />
                 </div>
               </div>
 
@@ -151,14 +169,14 @@ export default function DashboardPage() {
                   }`}>
                     {stat.change}
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm neuro-text-secondary">
                     {stat.description}
                   </span>
                 </div>
               </div>
 
               {/* Mini chart */}
-              <div className="mt-4 flex items-end justify-between h-8 bg-gray-50 rounded-lg p-1">
+              <div className="mt-4 flex items-end justify-between h-8 neuro-concave-sm p-1">
                 {[20, 25, 22, 30, 28, 35, 32].map((value: number, i: number) => (
                   <div
                     key={i}
@@ -174,17 +192,21 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="col-span-4 card p-8 text-center">
+            <p className="neuro-text-secondary">No se pudieron cargar las estadísticas</p>
+          </div>
+        )}
       </div>
 
       {/* Recent Activity */}
       <div className="card animate-slide-up" style={{ animationDelay: '0.3s' }}>
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold neuro-text-primary">
               Actividad Reciente
             </h2>
-            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors">
+            <button className="neuro-button px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
               Ver todo
             </button>
           </div>
@@ -194,46 +216,48 @@ export default function DashboardPage() {
               recentActivity.map((activity: any, index: number) => (
                 <div
                   key={activity.id}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-all duration-200 cursor-pointer"
+                  className="flex items-center justify-between p-4 neuro-convex-sm hover:neuro-concave-sm rounded-xl transition-all duration-200 cursor-pointer"
                   style={{ animationDelay: `${0.1 + index * 0.1}s` }}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`w-3 h-3 rounded-full ${
-                      activity.status === 'completado' ? 'bg-green-500' :
-                      activity.status === 'proceso' ? 'bg-yellow-500' : 'bg-red-500'
+                      activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
+                      activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' : 
+                      'bg-red-500'
                     }`} />
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium neuro-text-primary">
                         {activity.equipment || 'Equipo sin nombre'}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        {activity.client || 'Cliente desconocido'} • {activity.type || 'Tipo desconocido'}
+                      <p className="text-sm neuro-text-secondary">
+                        {activity.client || 'Cliente desconocido'} • {activity.description || 'Sin descripción'}
                       </p>
                     </div>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm neuro-text-secondary">
                       {activity.time || 'Tiempo desconocido'}
                     </p>
                     <div className="flex items-center space-x-2">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        activity.priority === 'critica' ? 'status-fuera-servicio' :
-                        activity.priority === 'alta' ? 'status-mantenimiento' : 'status-operativo'
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${
+                        activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
+                        activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
                       }`}>
-                        {activity.priority || 'Normal'}
+                        {activity.type || 'Normal'}
                       </span>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        activity.status === 'completado' ? 'status-operativo' :
-                        activity.status === 'proceso' ? 'status-mantenimiento' : 'status-fuera-servicio'
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${
+                        activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
+                        activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' : 
+                        'text-red-600 bg-red-50'
                       }`}>
-                        {activity.status || 'Desconocido'}
+                        {activity.status?.replace('_', ' ') || 'Pendiente'}
                       </span>
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 neuro-text-secondary">
                 <p>No hay actividad reciente</p>
               </div>
             )}

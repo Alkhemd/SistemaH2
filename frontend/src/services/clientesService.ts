@@ -17,14 +17,37 @@ export interface Cliente {
 
 
 class ClientesService {
-  async getAll(): Promise<{ data: Cliente[] | null; error: any }> {
-    const { data, error } = await supabase
+  async getAll(): Promise<{ data: any[] | null; error: any }> {
+    // Primero obtenemos los clientes
+    const { data: clientes, error } = await supabase
       .from('cliente')
       .select('*');
+    
     if (error) {
       console.error('Error al obtener clientes:', error);
+      return { data: null, error };
     }
-    return { data: data as Cliente[] | null, error };
+    
+    if (!clientes || clientes.length === 0) {
+      return { data: [], error: null };
+    }
+    
+    // Luego obtenemos el conteo de equipos para cada cliente
+    const clientesConEquipos = await Promise.all(
+      clientes.map(async (cliente) => {
+        const { count } = await supabase
+          .from('equipo')
+          .select('*', { count: 'exact', head: true })
+          .eq('cliente_id', cliente.cliente_id);
+        
+        return {
+          ...cliente,
+          equipos_count: count || 0
+        };
+      })
+    );
+    
+    return { data: clientesConEquipos, error: null };
   }
 
   async create(data: Omit<Cliente, 'cliente_id'>): Promise<{ data: Cliente | null; error: any }> {
