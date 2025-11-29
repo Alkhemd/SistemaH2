@@ -236,7 +236,10 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
           </Button>
           <Button
             type="submit"
+            variant="secondary"
             disabled={isSubmitting || isLoading}
+            className="!text-gray-900"
+            style={{ color: '#1a1a1a' }}
           >
             {isSubmitting ? 'Creando...' : 'Crear Equipo'}
           </Button>

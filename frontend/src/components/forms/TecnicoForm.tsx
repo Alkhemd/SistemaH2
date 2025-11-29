@@ -235,7 +235,10 @@ export const TecnicoForm: React.FC<TecnicoFormProps> = ({
           </Button>
           <Button
             type="submit"
+            variant="secondary"
             disabled={isSubmitting || isLoading}
+            className="!text-gray-900"
+            style={{ color: '#1a1a1a' }}
           >
             {isSubmitting || isLoading ? 'Guardando...' : (tecnico ? 'Actualizar' : 'Crear')}
           </Button>

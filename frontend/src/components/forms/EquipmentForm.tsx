@@ -299,13 +299,18 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
           variant="secondary"
           onClick={onCancel}
           disabled={isSubmitting || isLoading}
+          className="!text-gray-900"
+          style={{ color: '#1a1a1a' }}
         >
           Cancelar
         </Button>
         <Button
           type="submit"
+          variant="secondary"
           loading={isSubmitting || isLoading}
           disabled={isSubmitting || isLoading}
+          className="!text-gray-900 !bg-blue-500"
+          style={{ color: '#ffffff', backgroundColor: '#0071E3' }}
         >
           {equipment ? 'Actualizar' : 'Crear'} Equipo
         </Button>

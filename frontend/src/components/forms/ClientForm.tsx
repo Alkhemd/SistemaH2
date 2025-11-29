@@ -243,7 +243,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
           </Button>
           <Button
             type="submit"
+            variant="secondary"
             disabled={isSubmitting || isLoading}
+            className="!text-gray-900"
+            style={{ color: '#1a1a1a' }}
           >
             {isSubmitting || isLoading ? 'Guardando...' : (client ? 'Actualizar Cliente' : 'Crear Cliente')}
           </Button>

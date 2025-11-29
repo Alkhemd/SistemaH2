@@ -335,13 +335,14 @@ export default function OrdenesPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           <div className="neuro-input-wrapper">
-            <Search className="w-5 h-5 neuro-text-tertiary absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            <Search className="w-5 h-5 neuro-text-tertiary absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
             <input
               type="text"
               placeholder="Buscar órdenes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="neuro-input pl-14"
+              className="neuro-input"
+              style={{ paddingLeft: '48px' }}
             />
           </div>
 

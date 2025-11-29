@@ -13,11 +13,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const buttonVariants = {
-  primary: 'bg-primary-500 hover:bg-primary-600 text-white shadow-lg hover:shadow-xl',
-  secondary: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 shadow-sm hover:shadow-md',
-  outline: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm hover:shadow-md',
-  ghost: 'hover:bg-gray-100 text-gray-700 hover:text-gray-900',
-  destructive: 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl',
+  primary: 'bg-primary-500 hover:bg-primary-600 !text-white shadow-lg hover:shadow-xl',
+  secondary: 'bg-white hover:bg-gray-50 !text-gray-900 border border-gray-200 shadow-sm hover:shadow-md',
+  outline: 'bg-white hover:bg-gray-50 !text-gray-700 border border-gray-300 shadow-sm hover:shadow-md',
+  ghost: 'hover:bg-gray-100 !text-gray-700 hover:!text-gray-900',
+  destructive: 'bg-red-500 hover:bg-red-600 !text-white shadow-lg hover:shadow-xl',
 };
 
 const sizeVariants = {
