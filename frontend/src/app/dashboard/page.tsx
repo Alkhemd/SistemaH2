@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { dashboardService } from '@/services/dashboardService';
-import { testSupabaseConnection } from '@/utils/testSupabase';
 import {
   CubeIcon,
   ExclamationTriangleIcon,
@@ -23,16 +22,13 @@ export default function DashboardPage() {
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
-        
-        // Probar conexión con Supabase
-        await testSupabaseConnection();
-        
-        // Obtener estadísticas desde Supabase
+
+        // Obtener estadísticas desde el backend
         console.log('🔍 Cargando estadísticas del dashboard...');
         const statsResponse = await dashboardService.getEstadisticas();
-        
+
         console.log('📊 Respuesta de estadísticas:', statsResponse);
-        
+
         if (statsResponse.error) {
           console.error('❌ Error en statsResponse:', statsResponse.error);
           throw new Error(statsResponse.error.message);
@@ -40,11 +36,11 @@ export default function DashboardPage() {
 
         console.log('✅ Datos de estadísticas:', statsResponse.data);
         setStats(statsResponse.data);
-        
+
         // Cargar actividad reciente desde Supabase
         console.log('🔍 Cargando actividad reciente...');
         const activityResponse = await dashboardService.getActividadReciente();
-        
+
         if (activityResponse.error) {
           console.warn('⚠️ Error al cargar actividad reciente:', activityResponse.error);
           setRecentActivity([]);
@@ -164,9 +160,8 @@ export default function DashboardPage() {
                   ) : (
                     <ArrowTrendingDownIcon className="icon-sm text-red-500" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {stat.change}
                   </span>
                   <span className="text-sm neuro-text-secondary">
@@ -180,9 +175,8 @@ export default function DashboardPage() {
                 {[20, 25, 22, 30, 28, 35, 32].map((value: number, i: number) => (
                   <div
                     key={i}
-                    className={`w-2 rounded-sm transition-all duration-300 ${
-                      stat.changeType === 'positive' ? 'bg-green-400' : 'bg-red-400'
-                    }`}
+                    className={`w-2 rounded-sm transition-all duration-300 ${stat.changeType === 'positive' ? 'bg-green-400' : 'bg-red-400'
+                      }`}
                     style={{
                       height: `${Math.max((value / 35) * 100, 10)}%`,
                       animationDelay: `${0.5 + i * 0.1}s`
@@ -220,11 +214,10 @@ export default function DashboardPage() {
                   style={{ animationDelay: `${0.1 + index * 0.1}s` }}
                 >
                   <div className="flex items-center space-x-4">
-                    <div className={`w-3 h-3 rounded-full ${
-                      activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
-                      activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' : 
-                      'bg-red-500'
-                    }`} />
+                    <div className={`w-3 h-3 rounded-full ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
+                        activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' :
+                          'bg-red-500'
+                      }`} />
                     <div>
                       <p className="font-medium neuro-text-primary">
                         {activity.equipment || 'Equipo sin nombre'}
@@ -239,17 +232,15 @@ export default function DashboardPage() {
                       {activity.time || 'Tiempo desconocido'}
                     </p>
                     <div className="flex items-center space-x-2">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${
-                        activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
-                        activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
-                      }`}>
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
+                          activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
+                        }`}>
                         {activity.type || 'Normal'}
                       </span>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${
-                        activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
-                        activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' : 
-                        'text-red-600 bg-red-50'
-                      }`}>
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
+                          activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' :
+                            'text-red-600 bg-red-50'
+                        }`}>
                         {activity.status?.replace('_', ' ') || 'Pendiente'}
                       </span>
                     </div>

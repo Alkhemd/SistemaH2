@@ -1,5 +1,4 @@
-
-import { supabase } from '../lib/supabaseClient';
+import { backendClient } from '../lib/backendClient';
 
 export interface Tecnico {
   tecnico_id: number;
@@ -12,69 +11,21 @@ export interface Tecnico {
   activo?: boolean;
 }
 
-
 class TecnicosService {
   async getAll(): Promise<{ data: Tecnico[] | null; error: any }> {
-    const { data, error } = await supabase
-      .from('tecnico')
-      .select('*');
-    if (error) {
-      console.error('Error al obtener técnicos:', error);
-    }
-    // Convertir campo activo de 0/1 a booleano si es necesario
-    const dataTyped = data?.map((t: any) => ({ ...t, activo: t.activo === true || t.activo === 1 }));
-    return { data: dataTyped as Tecnico[] | null, error };
+    return backendClient.get<Tecnico[]>('/tecnicos');
   }
 
   async create(data: Omit<Tecnico, 'tecnico_id'>): Promise<{ data: Tecnico | null; error: any }> {
-    // Obtener el máximo ID actual y sumarle 1
-    const { data: maxIdResult } = await supabase
-      .from('tecnico')
-      .select('tecnico_id')
-      .order('tecnico_id', { ascending: false })
-      .limit(1)
-      .single();
-    
-    const nextId = maxIdResult ? maxIdResult.tecnico_id + 1 : 1;
-    
-    const dataWithId = {
-      ...data,
-      tecnico_id: nextId
-    };
-    
-    const { data: created, error } = await supabase
-      .from('tecnico')
-      .insert([dataWithId])
-      .select()
-      .single();
-    if (error) {
-      console.error('Error al crear técnico:', error);
-    }
-    return { data: created as Tecnico | null, error };
+    return backendClient.post<Tecnico>('/tecnicos', data);
   }
 
   async update(id: number, data: Partial<Omit<Tecnico, 'tecnico_id'>>): Promise<{ data: Tecnico | null; error: any }> {
-    const { data: updated, error } = await supabase
-      .from('tecnico')
-      .update(data)
-      .eq('tecnico_id', id)
-      .select()
-      .single();
-    if (error) {
-      console.error('Error al actualizar técnico:', error);
-    }
-    return { data: updated as Tecnico | null, error };
+    return backendClient.put<Tecnico>(`/tecnicos/${id}`, data);
   }
 
   async delete(id: number): Promise<{ error: any }> {
-    const { error } = await supabase
-      .from('tecnico')
-      .delete()
-      .eq('tecnico_id', id);
-    if (error) {
-      console.error('Error al eliminar técnico:', error);
-    }
-    return { error };
+    return backendClient.delete(`/tecnicos/${id}`);
   }
 }
 
