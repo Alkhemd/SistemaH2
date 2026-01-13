@@ -46,7 +46,7 @@ export default function ClientesPage() {
     const timer = setTimeout(() => {
       fetchClients({
         page: searchTerm ? 1 : currentPage,
-        limit: 20,
+        limit: 10,
         search: searchTerm
       });
       if (searchTerm && currentPage !== 1) {
@@ -241,18 +241,13 @@ export default function ClientesPage() {
         )}
       </div>
 
-      {/* Clients List */}
-      <motion.div
-        variants={staggerListParent}
-        initial="hidden"
-        animate="visible"
-        className="space-y-4"
-      >
+      {/* Clients List - Using regular divs with CSS animations for reliability */}
+      <div className="space-y-4">
         {filteredClients.map((client, index) => (
-          <motion.div
+          <div
             key={client.id}
-            variants={staggerListItem}
-            className="card hover:shadow-lg transition-all duration-300 cursor-pointer"
+            className="card hover:shadow-lg transition-all duration-300 cursor-pointer animate-fade-in"
+            style={{ animationDelay: `${index * 50}ms` }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-start space-x-4 flex-1">
@@ -329,9 +324,9 @@ export default function ClientesPage() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Empty State */}
       {filteredClients.length === 0 && (
