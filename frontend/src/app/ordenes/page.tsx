@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, 
-  Plus, 
-  Filter, 
+import {
+  Search,
+  Plus,
+  Filter,
   Calendar,
   Clock,
   User,
@@ -47,23 +47,25 @@ interface Order {
 
 export default function OrdenesPage() {
   // Hooks para datos del API
-  const { ordenes: orders, createOrden: createOrder, updateOrden: updateOrder, deleteOrden: deleteOrder, isLoading: isLoadingOrdenes } = useOrdenes();
+  const { ordenes: orders, createOrden: createOrder, updateOrden: updateOrder, deleteOrden: deleteOrder, isLoading: isLoadingOrdenes, pagination, fetchOrdenes } = useOrdenes();
   const { equipments } = useEquipments();
   const { clients } = useClients();
   const { tecnicos } = useTecnicos();
   const { isLoading: isLoadingOrders } = useStore();
-  
+
   // Estados locales
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedPrioridad, setSelectedPrioridad] = useState<string>('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
   const [selectedTipo, setSelectedTipo] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     equipo_id: 0,
@@ -99,7 +101,7 @@ export default function OrdenesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validaciones
     if (!formData.equipo_id || formData.equipo_id === 0) {
       showToast.error('Selecciona un equipo');
@@ -223,7 +225,7 @@ export default function OrdenesPage() {
     if (!confirm(`¿Estás seguro de eliminar la orden ${order.id}?`)) {
       return;
     }
-    
+
     try {
       await deleteOrder(parseInt(order.id));
       showToast.success('Orden eliminada exitosamente');
@@ -238,21 +240,33 @@ export default function OrdenesPage() {
     setOpenMenuId(openMenuId === orderId ? null : orderId);
   };
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order: Order) => {
-      const matchesSearch = searchTerm === '' || 
-        order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.equipo?.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.titulo?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-      const matchesPrioridad = selectedPrioridad === '' || order.prioridad === selectedPrioridad;
-      const matchesEstado = selectedEstado === '' || order.estado === selectedEstado;
-      const matchesTipo = selectedTipo === '' || order.tipo === selectedTipo;
-
-      return matchesSearch && matchesPrioridad && matchesEstado && matchesTipo;
+  // Fetch orders when filters change
+  useEffect(() => {
+    fetchOrdenes({
+      page: currentPage,
+      limit: 10,
+      search: debouncedSearch || undefined,
+      prioridad: selectedPrioridad || undefined,
+      estado: selectedEstado || undefined,
     });
-  }, [orders, searchTerm, selectedPrioridad, selectedEstado, selectedTipo]);
+  }, [currentPage, debouncedSearch, selectedPrioridad, selectedEstado]);
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = useCallback((setter: (val: string) => void, value: string) => {
+    setter(value);
+    setCurrentPage(1);
+  }, []);
+
+  // Orders are now directly from the hook (already paginated from server)
+  const filteredOrders = orders;
 
   const getPriorityIcon = (prioridad: Order['prioridad']) => {
     switch (prioridad) {
@@ -303,6 +317,7 @@ export default function OrdenesPage() {
     setSelectedEstado('');
     setSelectedTipo('');
     setSearchTerm('');
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = selectedPrioridad || selectedEstado || selectedTipo || searchTerm;
@@ -317,7 +332,7 @@ export default function OrdenesPage() {
         <p className="text-lg neuro-text-secondary mb-4">
           Gestión de órdenes de mantenimiento y reparación
         </p>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="neuro-button-white"
         >
@@ -332,7 +347,7 @@ export default function OrdenesPage() {
           <Filter className="w-5 h-5 neuro-text-secondary" />
           <h3 className="font-semibold neuro-text-primary text-base">Filtros</h3>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           <div className="neuro-input-wrapper">
             <Search className="w-5 h-5 neuro-text-tertiary absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
@@ -348,24 +363,27 @@ export default function OrdenesPage() {
 
           <select
             value={selectedPrioridad}
-            onChange={(e) => setSelectedPrioridad(e.target.value)}
+            onChange={(e) => handleFilterChange(setSelectedPrioridad, e.target.value)}
             className="neuro-input"
           >
             <option value="">Todas las prioridades</option>
-            <option value="critica">Crítica</option>
-            <option value="alta">Alta</option>
-            <option value="normal">Normal</option>
+            <option value="Crítica">Crítica</option>
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+            <option value="Baja">Baja</option>
+            <option value="Normal">Normal</option>
           </select>
 
           <select
             value={selectedEstado}
-            onChange={(e) => setSelectedEstado(e.target.value)}
+            onChange={(e) => handleFilterChange(setSelectedEstado, e.target.value)}
             className="neuro-input"
           >
             <option value="">Todos los estados</option>
-            <option value="abierta">Abierta</option>
-            <option value="proceso">En Proceso</option>
-            <option value="cerrada">Cerrada</option>
+            <option value="Abierta">Abierta</option>
+            <option value="En Proceso">En Proceso</option>
+            <option value="En Espera">En Espera</option>
+            <option value="Cerrada">Cerrada</option>
           </select>
 
           <select
@@ -383,7 +401,7 @@ export default function OrdenesPage() {
 
       {/* Results count */}
       <p className="neuro-text-tertiary text-sm">
-        {filteredOrders.length} órdenes encontradas
+        {pagination.isSearch ? filteredOrders.length : `Mostrando ${filteredOrders.length} de ${pagination.total}`} órdenes
       </p>
 
       {/* Orders Table */}
@@ -406,160 +424,189 @@ export default function OrdenesPage() {
               </thead>
               <tbody>
                 {filteredOrders.map((order, index) => (
-                <motion.tr
-                  key={order.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <td className="py-4 px-4">
-                    <span className="font-mono text-sm text-[#0071E3] font-medium">
-                      {order.id}
-                    </span>
-                  </td>
-                  
-                  <td className="py-4 px-4">
-                    <div>
-                      <p className="font-medium text-[#1D1D1F] text-sm">
-                        {order.equipo.modelo}
-                      </p>
-                      <p className="text-xs text-[#86868B]">
-                        {order.equipo.fabricante}
-                      </p>
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-[#6E6E73]">{order.cliente}</span>
-                  </td>
-                  
-                  <td className="py-4 px-4">
-                    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(order.prioridad)}`}>
-                      {getPriorityIcon(order.prioridad)}
-                      <span className="capitalize">{order.prioridad}</span>
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-4">
-                    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.estado)}`}>
-                      {getStatusIcon(order.estado)}
-                      <span className="capitalize">{order.estado}</span>
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-1 text-sm text-[#6E6E73]">
-                      <Calendar size={14} />
-                      <span>{order.fechaCreacion}</span>
-                    </div>
-                  </td>
-                  
-                  <td className="py-4 px-4 relative">
-                    <div className="flex items-center space-x-2">
-                      {/* Botón de menú desplegable */}
-                      <div className="relative">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleMenu(order.id);
-                          }}
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                        >
-                          <MoreVertical size={16} className="text-[#6E6E73]" />
-                        </button>
-                        
-                        {/* Menú desplegable */}
-                        <AnimatePresence>
-                          {openMenuId === order.id && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onClick={() => handleViewDetails(order)}
-                                className="w-full px-4 py-2 text-left text-sm text-[#1D1D1F] hover:bg-gray-50 flex items-center space-x-2 transition-colors"
-                              >
-                                <Eye size={16} className="text-[#0071E3]" />
-                                <span>Ver detalles</span>
-                              </button>
-                              
-                              <button
-                                onClick={() => handleEdit(order)}
-                                className="w-full px-4 py-2 text-left text-sm text-[#1D1D1F] hover:bg-gray-50 flex items-center space-x-2 transition-colors"
-                              >
-                                <Edit size={16} className="text-[#34C759]" />
-                                <span>Editar</span>
-                              </button>
-                              
-                              <button
-                                onClick={() => handleChangeStatus(order)}
-                                className="w-full px-4 py-2 text-left text-sm text-[#1D1D1F] hover:bg-gray-50 flex items-center space-x-2 transition-colors"
-                              >
-                                <RefreshCw size={16} className="text-[#FF9500]" />
-                                <span>Cambiar estado</span>
-                              </button>
-                              
-                              <div className="border-t border-gray-200 my-1"></div>
-                              
-                              <button
-                                onClick={() => handleDelete(order)}
-                                className="w-full px-4 py-2 text-left text-sm text-[#FF3B30] hover:bg-red-50 flex items-center space-x-2 transition-colors"
-                              >
-                                <Trash2 size={16} />
-                                <span>Eliminar</span>
-                              </button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  <motion.tr
+                    key={order.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <td className="py-4 px-4">
+                      <span className="font-mono text-sm text-[#0071E3] font-medium">
+                        {order.id}
+                      </span>
+                    </td>
 
-        {/* Empty State */}
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-16 px-4">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText size={32} className="text-[#6E6E73]" />
-            </div>
-            <h3 className="text-xl font-semibold text-[#1D1D1F] mb-2">
-              No se encontraron órdenes
-            </h3>
-            <p className="text-[#6E6E73] mb-6">
-              Intenta ajustar los filtros o términos de búsqueda
-            </p>
-            <button 
-              onClick={clearFilters}
-              className="btn-secondary"
-            >
-              Limpiar filtros
-            </button>
+                    <td className="py-4 px-4">
+                      <div>
+                        <p className="font-medium text-[#1D1D1F] text-sm">
+                          {order.equipo.modelo}
+                        </p>
+                        <p className="text-xs text-[#86868B]">
+                          {order.equipo.fabricante}
+                        </p>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <span className="text-sm text-[#6E6E73]">{order.cliente}</span>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(order.prioridad)}`}>
+                        {getPriorityIcon(order.prioridad)}
+                        <span className="capitalize">{order.prioridad}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.estado)}`}>
+                        {getStatusIcon(order.estado)}
+                        <span className="capitalize">{order.estado}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <div className="flex items-center space-x-1 text-sm text-[#6E6E73]">
+                        <Calendar size={14} />
+                        <span>{order.fechaCreacion}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4 relative">
+                      <div className="flex items-center space-x-2">
+                        {/* Botón de menú desplegable */}
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMenu(order.id);
+                            }}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                          >
+                            <MoreVertical size={16} className="text-[#6E6E73]" />
+                          </button>
+
+                          {/* Menú desplegable */}
+                          <AnimatePresence>
+                            {openMenuId === order.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  onClick={() => handleViewDetails(order)}
+                                  className="w-full px-4 py-2 text-left text-sm text-[#1D1D1F] hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                                >
+                                  <Eye size={16} className="text-[#0071E3]" />
+                                  <span>Ver detalles</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleEdit(order)}
+                                  className="w-full px-4 py-2 text-left text-sm text-[#1D1D1F] hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                                >
+                                  <Edit size={16} className="text-[#34C759]" />
+                                  <span>Editar</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleChangeStatus(order)}
+                                  className="w-full px-4 py-2 text-left text-sm text-[#1D1D1F] hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                                >
+                                  <RefreshCw size={16} className="text-[#FF9500]" />
+                                  <span>Cambiar estado</span>
+                                </button>
+
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                <button
+                                  onClick={() => handleDelete(order)}
+                                  className="w-full px-4 py-2 text-left text-sm text-[#FF3B30] hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                  <span>Eliminar</span>
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+
+          {/* Empty State */}
+          {filteredOrders.length === 0 && (
+            <div className="text-center py-16 px-4">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText size={32} className="text-[#6E6E73]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#1D1D1F] mb-2">
+                No se encontraron órdenes
+              </h3>
+              <p className="text-[#6E6E73] mb-6">
+                Intenta ajustar los filtros o términos de búsqueda
+              </p>
+              <button
+                onClick={clearFilters}
+                className="btn-secondary"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Pagination */}
-      {filteredOrders.length > 0 && (
+      {filteredOrders.length > 0 && pagination.totalPages > 1 && (
         <div className="flex justify-center pt-4 animate-fade-in">
-          <div className="flex items-center space-x-2 neuro-text-secondary">
-            <button className="px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-              ←
+          <div className="flex items-center space-x-3 neuro-text-secondary">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="neuro-button-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ← Anterior
             </button>
-            <span className="px-3 py-2 bg-[#0071E3] text-white rounded-lg">1</span>
-            <span className="px-3 py-2">2</span>
-            <span className="px-3 py-2">3</span>
-            <button className="px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-              →
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              let pageNum;
+              if (pagination.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= pagination.totalPages - 2) {
+                pageNum = pagination.totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`px-3 py-2 rounded-lg transition-colors duration-200 ${currentPage === pageNum
+                    ? 'bg-[#0071E3] text-white'
+                    : 'hover:bg-gray-50'
+                    }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
+              disabled={currentPage === pagination.totalPages}
+              className="neuro-button-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente →
             </button>
           </div>
         </div>
@@ -607,7 +654,7 @@ export default function OrdenesPage() {
                     <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                       Equipo *
                     </label>
-                    <select 
+                    <select
                       name="equipo_id"
                       value={formData.equipo_id}
                       onChange={handleInputChange}
@@ -626,7 +673,7 @@ export default function OrdenesPage() {
                     <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                       Cliente *
                     </label>
-                    <select 
+                    <select
                       name="cliente_id"
                       value={formData.cliente_id}
                       onChange={handleInputChange}
@@ -682,7 +729,7 @@ export default function OrdenesPage() {
                       <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                         Tipo *
                       </label>
-                      <select 
+                      <select
                         name="tipo"
                         value={formData.tipo}
                         onChange={handleInputChange}
@@ -699,7 +746,7 @@ export default function OrdenesPage() {
                       <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                         Prioridad *
                       </label>
-                      <select 
+                      <select
                         name="prioridad"
                         value={formData.prioridad}
                         onChange={handleInputChange}
@@ -716,7 +763,7 @@ export default function OrdenesPage() {
                       <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                         Técnico
                       </label>
-                      <select 
+                      <select
                         name="tecnico_id"
                         value={formData.tecnico_id || ''}
                         onChange={handleInputChange}
@@ -984,7 +1031,7 @@ export default function OrdenesPage() {
                 <label className="block text-sm font-medium text-[#6E6E73] mb-2">Prioridad</label>
                 <select
                   value={editFormData.prioridad}
-                  onChange={(e) => setEditFormData({...editFormData, prioridad: e.target.value})}
+                  onChange={(e) => setEditFormData({ ...editFormData, prioridad: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="critica">Crítica</option>
@@ -996,7 +1043,7 @@ export default function OrdenesPage() {
                 <label className="block text-sm font-medium text-[#6E6E73] mb-2">Estado</label>
                 <select
                   value={editFormData.estado}
-                  onChange={(e) => setEditFormData({...editFormData, estado: e.target.value})}
+                  onChange={(e) => setEditFormData({ ...editFormData, estado: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="abierta">Abierta</option>
@@ -1008,7 +1055,7 @@ export default function OrdenesPage() {
                 <label className="block text-sm font-medium text-[#6E6E73] mb-2">Descripción</label>
                 <textarea
                   value={editFormData.descripcion}
-                  onChange={(e) => setEditFormData({...editFormData, descripcion: e.target.value})}
+                  onChange={(e) => setEditFormData({ ...editFormData, descripcion: e.target.value })}
                   rows={4}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
                 />

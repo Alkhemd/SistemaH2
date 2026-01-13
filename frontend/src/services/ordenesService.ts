@@ -26,8 +26,22 @@ export interface Orden {
 }
 
 class OrdenesService {
-  async getAll(): Promise<{ data: Orden[] | null; error: any }> {
-    return backendClient.get<Orden[]>('/ordenes');
+  async getAll(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    prioridad?: string;
+    estado?: string;
+  }): Promise<{ data: Orden[] | null; pagination?: any; error: any }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.prioridad) queryParams.append('prioridad', params.prioridad);
+    if (params?.estado) queryParams.append('estado', params.estado);
+
+    const endpoint = queryParams.toString() ? `/ordenes?${queryParams}` : '/ordenes';
+    return backendClient.get<Orden[]>(endpoint);
   }
 
   async getById(id: number): Promise<{ data: Orden | null; error: any }> {

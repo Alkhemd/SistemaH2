@@ -74,12 +74,12 @@ export const useModalidades = () => {
     try {
       setIsLoading(true);
       const { error } = await modalidadesService.delete(id);
-      
+
       if (error) {
         console.error('[deleteModalidad] Error de Supabase:', error);
         throw new Error(error.message || 'Error al eliminar modalidad');
       }
-      
+
       setModalidades(modalidades.filter(m => m.id !== id.toString()));
       showToast.success('Modalidad eliminada exitosamente');
     } catch (err) {
@@ -144,16 +144,16 @@ export const useFabricantes = () => {
       console.log('[createFabricante] Enviando datos:', data);
       const { data: created, error } = await fabricantesService.create(data);
       console.log('[createFabricante] Respuesta:', { created, error });
-      
+
       if (error) {
         console.error('[createFabricante] Error de Supabase:', error);
         throw new Error(error.message || 'Error al crear fabricante');
       }
-      
+
       if (!created) {
         throw new Error('No se recibió respuesta del servidor');
       }
-      
+
       const mapped = mapFabricanteToUI(created);
       setFabricantes([...fabricantes, mapped]);
       showToast.success('Fabricante creado exitosamente');
@@ -188,12 +188,12 @@ export const useFabricantes = () => {
     try {
       setIsLoading(true);
       const { error } = await fabricantesService.delete(id);
-      
+
       if (error) {
         console.error('[deleteFabricante] Error de Supabase:', error);
         throw new Error(error.message || 'Error al eliminar fabricante');
       }
-      
+
       setFabricantes(fabricantes.filter(f => f.id !== id.toString()));
       showToast.success('Fabricante eliminado exitosamente');
     } catch (err) {
@@ -244,11 +244,11 @@ export const useTecnicos = () => {
       // Adaptar especialidad a los valores esperados por el mapeador
       const mapped = Array.isArray(data)
         ? data.map((t: any) => mapTecnicoToUI({
-            ...t,
-            especialidad: [
-              'XR','CT','MR','US','MG','PET/CT','Multi-mod','DEXA','RF','CATH'
-            ].includes(String(t.especialidad)) ? String(t.especialidad) : 'Multi-mod',
-          }))
+          ...t,
+          especialidad: [
+            'XR', 'CT', 'MR', 'US', 'MG', 'PET/CT', 'Multi-mod', 'DEXA', 'RF', 'CATH'
+          ].includes(String(t.especialidad)) ? String(t.especialidad) : 'Multi-mod',
+        }))
         : [];
       setTecnicos(mapped);
     } catch (err) {
@@ -266,7 +266,7 @@ export const useTecnicos = () => {
       const { data: created, error } = await tecnicosService.create(data);
       if (error || !created) throw error;
       const especialidades = [
-        'XR','CT','MR','US','MG','PET/CT','Multi-mod','DEXA','RF','CATH'
+        'XR', 'CT', 'MR', 'US', 'MG', 'PET/CT', 'Multi-mod', 'DEXA', 'RF', 'CATH'
       ] as const;
       const especialidadStr = String(created.especialidad || '');
       const especialidadVal = especialidades.includes(especialidadStr as any)
@@ -295,7 +295,7 @@ export const useTecnicos = () => {
       const { data: updated, error } = await tecnicosService.update(id, data);
       if (error || !updated) throw error;
       const especialidades = [
-        'XR','CT','MR','US','MG','PET/CT','Multi-mod','DEXA','RF','CATH'
+        'XR', 'CT', 'MR', 'US', 'MG', 'PET/CT', 'Multi-mod', 'DEXA', 'RF', 'CATH'
       ] as const;
       const especialidadStr = String(updated.especialidad || '');
       const especialidadVal = especialidades.includes(especialidadStr as any)
@@ -322,12 +322,12 @@ export const useTecnicos = () => {
     try {
       setIsLoading(true);
       const { error } = await tecnicosService.delete(id);
-      
+
       if (error) {
         console.error('[deleteTecnico] Error de Supabase:', error);
         throw new Error(error.message || 'Error al eliminar técnico');
       }
-      
+
       setTecnicos(tecnicos.filter(t => t.id !== id.toString()));
       showToast.success('Técnico eliminado exitosamente');
     } catch (err) {
@@ -373,16 +373,32 @@ export const useOrdenes = () => {
   const [ordenes, setOrdenes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    isSearch: false
+  });
 
-  const fetchOrdenes = async () => {
+  const fetchOrdenes = async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    prioridad?: string;
+    estado?: string;
+  }) => {
     try {
       setIsLoading(true);
       setError(null);
-      const { data, error } = await ordenesService.getAll();
+      const { data, pagination: paginationData, error } = await ordenesService.getAll(params);
       if (error) throw error;
       const mapped = Array.isArray(data) ? data.map(mapOrderToUI) : [];
-      console.log('[fetchOrdenes] Órdenes mapeadas:', mapped.length);
+      console.log('[fetchOrdenes] Órdenes mapeadas:', mapped.length, 'de', paginationData?.total);
       setOrdenes(mapped);
+      if (paginationData) {
+        setPagination(paginationData);
+      }
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar órdenes';
       setError(errorMessage);
@@ -398,18 +414,19 @@ export const useOrdenes = () => {
       console.log('[createOrden] Enviando datos:', data);
       const { data: created, error } = await ordenesService.create(data);
       console.log('[createOrden] Respuesta:', { created, error });
-      
+
       if (error) {
         console.error('[createOrden] Error de Supabase:', error);
         throw new Error(error.message || 'Error al crear orden');
       }
-      
+
       if (!created) {
         throw new Error('No se recibió respuesta del servidor');
       }
-      
+
       const mapped = mapOrderToUI(created as any);
-      setOrdenes([...ordenes, mapped]);
+      // Refresh to update pagination counts
+      await fetchOrdenes({ page: pagination.page, limit: pagination.limit });
       showToast.success('Orden creada exitosamente');
       return mapped;
     } catch (err) {
@@ -426,29 +443,21 @@ export const useOrdenes = () => {
     try {
       console.log('[updateOrden] Actualizando orden:', id, data);
       const { data: updated, error } = await ordenesService.update(id, data);
-      
+
       if (error) {
         console.error('[updateOrden] Error de Supabase:', error);
         throw new Error(error.message || 'Error al actualizar orden');
       }
-      
+
       if (!updated) {
         throw new Error('No se recibió respuesta del servidor');
       }
-      
+
       console.log('[updateOrden] Orden actualizada, refrescando lista...');
-      
-      // Refrescar directamente sin usar fetchOrdenes para evitar conflictos de isLoading
-      try {
-        const { data: freshData, error: fetchError } = await ordenesService.getAll();
-        if (fetchError) throw fetchError;
-        const mapped = Array.isArray(freshData) ? freshData.map(mapOrderToUI) : [];
-        console.log('[updateOrden] Órdenes refrescadas:', mapped.length);
-        setOrdenes(mapped);
-      } catch (fetchErr) {
-        console.error('[updateOrden] Error al refrescar:', fetchErr);
-      }
-      
+
+      // Refresh current page
+      await fetchOrdenes({ page: pagination.page, limit: pagination.limit });
+
       showToast.success('Orden actualizada exitosamente');
       return updated;
     } catch (err) {
@@ -463,13 +472,14 @@ export const useOrdenes = () => {
     try {
       setIsLoading(true);
       const { error } = await ordenesService.delete(id);
-      
+
       if (error) {
         console.error('[deleteOrden] Error de Supabase:', error);
         throw new Error(error.message || 'Error al eliminar orden');
       }
-      
-      setOrdenes(ordenes.filter(o => o.id !== id.toString()));
+
+      // Refresh to update pagination counts
+      await fetchOrdenes({ page: pagination.page, limit: pagination.limit });
       showToast.success('Orden eliminada exitosamente');
     } catch (err) {
       console.error('[deleteOrden] Error capturado:', err);
@@ -481,18 +491,20 @@ export const useOrdenes = () => {
     }
   };
 
-  useEffect(() => {
-    fetchOrdenes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Don't auto-fetch on mount - let the page control fetching with params
+  // useEffect(() => {
+  //   fetchOrdenes();
+  // }, []);
 
   return {
     ordenes,
     isLoading,
     error,
+    pagination,
     fetchOrdenes,
     createOrden,
     updateOrden,
     deleteOrden,
   };
 };
+
