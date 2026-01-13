@@ -2,28 +2,55 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
 
-// GET all clientes with equipment count
+// GET all clientes with equipment count, pagination and search
 router.get('/', async (req, res) => {
     try {
-        const { data: clientes, error } = await supabase
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const search = req.query.search || '';
+        const offset = (page - 1) * limit;
+
+        let query = supabase
             .from('cliente')
-            .select('*');
+            .select('*', { count: 'exact' });
+
+        // Global search if search term exists
+        if (search.trim()) {
+            query = query.or(`nombre.ilike.%${search}%,ciudad.ilike.%${search}%,estado.ilike.%${search}%,contacto.ilike.%${search}%`);
+        } else {
+            // Pagination only when no search
+            query = query.range(offset, offset + limit - 1);
+        }
+
+        query = query.order('cliente_id', { ascending: false });
+
+        const { data: clientes, error, count } = await query;
 
         if (error) throw error;
 
         // Get equipment count for each client
         const clientesConEquipos = await Promise.all(
             clientes.map(async (cliente) => {
-                const { count } = await supabase
+                const { count: equiposCount } = await supabase
                     .from('equipo')
                     .select('*', { count: 'exact', head: true })
                     .eq('cliente_id', cliente.cliente_id);
 
-                return { ...cliente, equipos_count: count || 0 };
+                return { ...cliente, equipos_count: equiposCount || 0 };
             })
         );
 
-        res.json({ data: clientesConEquipos, error: null });
+        res.json({
+            data: clientesConEquipos,
+            pagination: {
+                page: search.trim() ? 1 : page,
+                limit: search.trim() ? count : limit,
+                total: count || 0,
+                totalPages: search.trim() ? 1 : Math.ceil((count || 0) / limit),
+                isSearch: !!search.trim()
+            },
+            error: null
+        });
     } catch (error) {
         console.error('Error getting clientes:', error);
         res.status(500).json({ data: null, error: error.message });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { slideUp, fade, staggerListParent, staggerListItem } from '@/lib/animationPresets';
 import ScrollReveal from '@/components/animations/ScrollReveal';
@@ -9,7 +9,7 @@ import { useClients } from '@/hooks/useApi';
 import { ClientUI } from '@/types/equipment';
 import { Modal } from '@/components/ui/Modal';
 import { ClientForm } from '@/components/forms/ClientForm';
-import { 
+import {
   MagnifyingGlassIcon,
   PlusIcon,
   MapPinIcon,
@@ -31,25 +31,60 @@ export default function ClientesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientUI | null>(null);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view'>('create');
-  
-  const { clients, createClient, updateClient, deleteClient } = useClients();
+  const [mounted, setMounted] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  const { clients, pagination, fetchClients, createClient, updateClient, deleteClient } = useClients();
+
+  // Fix hydration error - wait for client mount before animations
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fetch clients with debounce when search or page changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchClients({
+        page: searchTerm ? 1 : currentPage,
+        limit: 20,
+        search: searchTerm
+      });
+      if (searchTerm && currentPage !== 1) {
+        setCurrentPage(1);
+      }
+    }, 500); // Debounce 500ms
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage]);
+
+  // Backend handles search, only apply dropdown filters client-side
   const filteredClients = useMemo(() => {
     const filtered = clients.filter(client => {
-      const matchesSearch = searchTerm === '' || 
-        client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.ciudad.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.contacto.responsable.toLowerCase().includes(searchTerm.toLowerCase());
-
       const matchesTipo = selectedTipo === '' || client.tipo === selectedTipo;
       const matchesEstado = selectedEstado === '' || client.estado_cliente === selectedEstado;
 
-      return matchesSearch && matchesTipo && matchesEstado;
+      return matchesTipo && matchesEstado;
     });
-    
+
     return filtered;
-  }, [clients, searchTerm, selectedTipo, selectedEstado]);
+  }, [clients, selectedTipo, selectedEstado]);
+
+  // Don't render animated content until mounted on client to prevent hydration mismatch
+  // This check must be AFTER all hooks to satisfy Rules of Hooks
+  if (!mounted) {
+    return (
+      <div className="container mx-auto px-6 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
+        </div>
+        <div className="animate-pulse space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="card h-32 bg-gray-100"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -101,14 +136,14 @@ export default function ClientesPage() {
   };
 
   const getTipoColor = (tipo: ClientUI['tipo']) => {
-    return tipo === 'publico' 
-      ? 'bg-blue-50 text-blue-600' 
+    return tipo === 'publico'
+      ? 'bg-blue-50 text-blue-600'
       : 'bg-purple-50 text-purple-600';
   };
 
   const getEstadoColor = (estado: ClientUI['estado_cliente']) => {
-    return estado === 'activo' 
-      ? 'bg-green-50 text-green-600' 
+    return estado === 'activo'
+      ? 'bg-green-50 text-green-600'
       : 'bg-gray-50 text-gray-600';
   };
 
@@ -119,7 +154,7 @@ export default function ClientesPage() {
         <h1 className="text-4xl font-bold neuro-text-primary mb-2">
           Gestión de hospitales y clínicas
         </h1>
-        <button 
+        <button
           className="neuro-button-white mt-4"
           onClick={openCreateModal}
         >
@@ -173,13 +208,38 @@ export default function ClientesPage() {
         </div>
       </div>
 
-      {/* Results Count */}
-      <p className="neuro-text-tertiary text-sm">
-        {filteredClients.length} clientes encontrados
-        {filteredClients.length !== clients.length && (
-          <span> de {clients.length} total</span>
+      {/* Results Count and Pagination */}
+      <div className="flex justify-between items-center">
+        <p className="neuro-text-tertiary text-sm">
+          {pagination?.isSearch
+            ? `${filteredClients.length} cliente${filteredClients.length !== 1 ? 's' : ''} encontrado${filteredClients.length !== 1 ? 's' : ''}`
+            : `Mostrando ${clients.length} de ${pagination?.total || 0} clientes`
+          }
+        </p>
+
+        {/* Pagination Controls */}
+        {pagination && !pagination.isSearch && pagination.totalPages > 1 && (
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              ← Anterior
+            </button>
+            <span className="neuro-text-secondary text-sm">
+              Página {currentPage} de {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              disabled={currentPage >= pagination.totalPages}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              Siguiente →
+            </button>
+          </div>
         )}
-      </p>
+      </div>
 
       {/* Clients List */}
       <motion.div
@@ -196,9 +256,16 @@ export default function ClientesPage() {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-start space-x-4 flex-1">
-                {/* Icon */}
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl icon-container">
-                  <BuildingOfficeIcon className="icon-md text-blue-600" />
+                {/* Icon - Neumorphic Design */}
+                <div className="w-16 h-16 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 relative overflow-hidden group">
+                  {/* Subtle glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/20 to-transparent opacity-60" />
+
+                  {/* Icon */}
+                  <BuildingOfficeIcon className="w-8 h-8 text-blue-600 relative z-10 transition-transform duration-300 group-hover:scale-110" />
+
+                  {/* Hover accent */}
+                  <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
 
                 {/* Main Info */}
@@ -253,7 +320,7 @@ export default function ClientesPage() {
 
               {/* Actions */}
               <div className="flex items-center space-x-2 flex-shrink-0">
-                <button 
+                <button
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                   onClick={() => handleViewClient(client)}
                   title="Ver detalles"
@@ -283,7 +350,7 @@ export default function ClientesPage() {
           <p className="text-[#6E6E73] mb-6">
             Intenta ajustar los filtros o términos de búsqueda
           </p>
-          <button 
+          <button
             onClick={clearFilters}
             className="btn-secondary"
           >
@@ -322,7 +389,7 @@ export default function ClientesPage() {
         }}
         title={
           modalType === 'create' ? 'Nuevo Cliente' :
-          modalType === 'edit' ? 'Editar Cliente' : 'Detalles del Cliente'
+            modalType === 'edit' ? 'Editar Cliente' : 'Detalles del Cliente'
         }
         size="lg"
       >
@@ -373,13 +440,13 @@ export default function ClientesPage() {
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-              <button 
+              <button
                 className="btn-ghost"
                 onClick={() => selectedClient && handleEditClient(selectedClient)}
               >
                 Editar
               </button>
-              <button 
+              <button
                 className="btn-ghost"
                 onClick={() => {
                   setModalOpen(false);
@@ -391,7 +458,7 @@ export default function ClientesPage() {
             </div>
           </div>
         ) : (
-          <ClientForm 
+          <ClientForm
             client={modalType === 'edit' && selectedClient ? selectedClient! : undefined}
             onSubmit={modalType === 'edit' ? handleUpdateClient : handleCreateClient}
             onCancel={() => {

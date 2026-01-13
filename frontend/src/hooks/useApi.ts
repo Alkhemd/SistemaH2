@@ -8,10 +8,10 @@ import { EquipmentUI, ClientUI, OrderUI } from '@/types/equipment';
 import { useStore } from '@/store/useStore';
 import { showToast } from '@/components/ui/Toast';
 import { getErrorMessage } from '@/types/errors';
-import { 
-  mapEquipmentToUI, 
-  mapEquipmentToAPI, 
-  mapClientToUI, 
+import {
+  mapEquipmentToUI,
+  mapEquipmentToAPI,
+  mapClientToUI,
   mapClientToAPI,
   mapOrderToUI,
   mapOrderToAPI,
@@ -24,16 +24,20 @@ import {
 export const useEquipments = () => {
   const { equipments, setEquipments, setLoading } = useStore();
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<any>(null);
 
-  const fetchEquipments = async () => {
+  const fetchEquipments = async (params?: { page?: number; limit?: number; search?: string }) => {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await equiposService.getAll();
+      const response = await equiposService.getAll(params);
+      const { data, pagination: pag, error } = response as any;
       if (error) throw error;
-  // Adaptar tipos flexibles de Supabase a los tipos estrictos del frontend
-  const mappedEquipments = Array.isArray(data) ? data.map((eq: any) => mapEquipmentToUI(eq)) : [];
-  setEquipments(mappedEquipments);
+
+      // Adaptar tipos flexibles de Supabase a los tipos estrictos del frontend
+      const mappedEquipments = Array.isArray(data) ? data.map((eq: any) => mapEquipmentToUI(eq)) : [];
+      setEquipments(mappedEquipments);
+      setPagination(pag || null);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar equipos';
       setError(errorMessage);
@@ -61,7 +65,8 @@ export const useEquipments = () => {
         estado_equipo: created?.estado_equipo || 'Operativo',
       } as any;
       const mappedEquipment = mapEquipmentToUI(tolerantEquipment);
-      setEquipments([...equipments, mappedEquipment]);
+      // Refresh list after create
+      await fetchEquipments();
       showToast.success('Equipo creado exitosamente');
       return mappedEquipment;
     } catch (err: any) {
@@ -132,6 +137,7 @@ export const useEquipments = () => {
 
   return {
     equipments,
+    pagination,
     error,
     fetchEquipments,
     createEquipment,
@@ -144,15 +150,18 @@ export const useEquipments = () => {
 export const useClients = () => {
   const { clients, setClients, setLoading } = useStore();
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<any>(null);
 
-  const fetchClients = async () => {
+  const fetchClients = async (params?: { page?: number; limit?: number; search?: string }) => {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await clientesService.getAll();
+      const response = await clientesService.getAll(params);
+      const { data, pagination: pag, error } = response as any;
       if (error) throw error;
       const mappedClients = Array.isArray(data) ? data.map((cl: any) => mapClientToUI(cl)) : [];
       setClients(mappedClients);
+      setPagination(pag || null);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar clientes';
       setError(errorMessage);
@@ -165,7 +174,6 @@ export const useClients = () => {
   const createClient = async (data: Omit<ClientUI, 'id'>) => {
     try {
       setLoading(true);
-      // mapClientToAPI puede devolver propiedades undefined, forzar string vacía si es necesario
       const apiData = {
         ...mapClientToAPI(data),
         nombre: data.nombre || '',
@@ -173,13 +181,13 @@ export const useClients = () => {
       };
       const { data: created, error } = await clientesService.create(apiData as any);
       if (error || !created) throw error;
-      // Adaptar el tipo Cliente (Supabase) a Client (frontend) para el mapper
       const tolerantClient = {
         ...created,
         tipo: created?.tipo || 'Hospital',
       } as any;
       const mappedClient = mapClientToUI(tolerantClient);
-      setClients([...clients, mappedClient]);
+      // Refresh list after create
+      await fetchClients();
       showToast.success('Cliente creado exitosamente');
       return mappedClient;
     } catch (err) {
@@ -242,6 +250,7 @@ export const useClients = () => {
 
   return {
     clients,
+    pagination,
     error,
     fetchClients,
     createClient,
@@ -261,8 +270,8 @@ export const useOrders = () => {
       setError(null);
       const { data, error } = await ordenesService.getAll();
       if (error) throw error;
-  const mappedOrders = Array.isArray(data) ? data.map((or: any) => mapOrderToUI(or)) : [];
-  setOrders(mappedOrders);
+      const mappedOrders = Array.isArray(data) ? data.map((or: any) => mapOrderToUI(or)) : [];
+      setOrders(mappedOrders);
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al cargar órdenes';
       setError(errorMessage);

@@ -20,8 +20,14 @@ export interface Equipo {
 }
 
 class EquiposService {
-  async getAll(): Promise<{ data: Equipo[] | null; error: any }> {
-    return backendClient.get<Equipo[]>('/equipos');
+  async getAll(params?: { page?: number; limit?: number; search?: string }): Promise<{ data: Equipo[] | null; pagination?: any; error: any }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+
+    const endpoint = queryParams.toString() ? `/equipos?${queryParams}` : '/equipos';
+    return backendClient.get<Equipo[]>(endpoint);
   }
 
   async create(data: Omit<Equipo, 'equipo_id'>): Promise<{ data: Equipo | null; error: any }> {

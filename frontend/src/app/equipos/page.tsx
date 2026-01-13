@@ -1,7 +1,7 @@
 // Archivo reemplazado por versión limpia y corregida
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   MagnifyingGlassIcon,
@@ -30,34 +30,26 @@ export default function EquiposPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentUI | null>(null);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view'>('create');
+  const [currentPage, setCurrentPage] = useState(1);
   const { modalOpen, setModal, isLoading } = useStore();
-  const { equipments, createEquipment, updateEquipment, deleteEquipment } = useEquipments();
+  const { equipments, pagination, fetchEquipments, createEquipment, updateEquipment, deleteEquipment } = useEquipments();
 
-  const filteredEquipments = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!equipments) return [] as EquipmentUI[];
-    if (!term) return equipments as EquipmentUI[];
+  // Effect para buscar cuando cambia el término de búsqueda o la página
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Búsqueda global en backend
+      fetchEquipments({
+        page: searchTerm ? 1 : currentPage,
+        limit: 20,
+        search: searchTerm
+      });
+      if (searchTerm && currentPage !== 1) {
+        setCurrentPage(1); // Reset to page 1 when searching
+      }
+    }, 500); // Debounce 500ms
 
-    return (equipments as any[]).filter((equipment) => {
-      const modelo = (equipment.modelo || '').toString().toLowerCase();
-      const numeroSerie = (equipment.numeroSerie || '').toString().toLowerCase();
-
-      const fabricante = typeof equipment.fabricante === 'string'
-        ? equipment.fabricante
-        : (equipment.fabricante && (equipment.fabricante as any).nombre) || '';
-
-      const cliente = typeof equipment.cliente === 'string'
-        ? equipment.cliente
-        : (equipment.cliente && (equipment.cliente as any).nombre) || '';
-
-      return (
-        modelo.includes(term) ||
-        numeroSerie.includes(term) ||
-        fabricante.toString().toLowerCase().includes(term) ||
-        cliente.toString().toLowerCase().includes(term)
-      );
-    }) as EquipmentUI[];
-  }, [equipments, searchTerm]);
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage]);
 
   const handleCreateEquipment = async (data: any) => {
     try {
@@ -135,7 +127,7 @@ export default function EquiposPage() {
         <h1 className="text-4xl font-bold neuro-text-primary mb-2">
           Gestión de equipos médicos
         </h1>
-        <button 
+        <button
           onClick={openCreateModal}
           className="neuro-button-white mt-4"
         >
@@ -150,7 +142,7 @@ export default function EquiposPage() {
           <FunnelIcon className="w-5 h-5 neuro-text-secondary" />
           <h3 className="font-semibold neuro-text-primary text-base">Búsqueda</h3>
         </div>
-        
+
         <div className="grid grid-cols-1 gap-5">
           <div className="neuro-input-wrapper">
             <MagnifyingGlassIcon className="w-5 h-5 neuro-text-tertiary absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
@@ -166,10 +158,38 @@ export default function EquiposPage() {
         </div>
       </div>
 
-      {/* Results count */}
-      <p className="neuro-text-tertiary text-sm">
-        Mostrando {filteredEquipments.length} de {equipments.length} equipos
-      </p>
+      {/* Results count and pagination  */}
+      <div className="flex justify-between items-center">
+        <p className="neuro-text-tertiary text-sm">
+          {pagination?.isSearch
+            ? `${equipments.length} resultado${equipments.length !== 1 ? 's' : ''} encontrado${equipments.length !== 1 ? 's' : ''}`
+            : `Mostrando ${equipments.length} de ${pagination?.total || 0} equipos`
+          }
+        </p>
+
+        {/* Pagination Controls */}
+        {pagination && !pagination.isSearch && pagination.totalPages > 1 && (
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ← Anterior
+            </button>
+            <span className="neuro-text-secondary text-sm">
+              Página {currentPage} de {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              disabled={currentPage >= pagination.totalPages}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Equipment Grid */}
       <motion.div
@@ -177,13 +197,13 @@ export default function EquiposPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
         className={`
-          ${viewMode === 'grid' 
-            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' 
+          ${viewMode === 'grid'
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
             : 'space-y-4'
           }
         `}
       >
-        {filteredEquipments.map((equipment, index) => (
+        {equipments.map((equipment, index) => (
           <motion.div
             key={equipment.id}
             initial={{ opacity: 0, y: 20 }}
@@ -205,12 +225,12 @@ export default function EquiposPage() {
                     px-2 py-1 rounded-full text-xs font-medium
                     ${equipment.estado === 'operativo' ? 'bg-green-100 text-green-800' :
                       equipment.estado === 'mantenimiento' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'}
+                        'bg-red-100 text-red-800'}
                   `}>
                     {equipment.estado}
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 text-sm text-gray-600">
                   <p><span className="font-medium">Serie:</span> {equipment.numeroSerie}</p>
                   <p><span className="font-medium">Cliente:</span> {equipment.cliente}</p>
@@ -219,19 +239,19 @@ export default function EquiposPage() {
                 </div>
 
                 <div className="mt-4 flex space-x-2">
-                  <button 
+                  <button
                     className="btn-ghost"
                     onClick={() => handleViewDetails(equipment.id)}
                   >
                     Ver Detalles
                   </button>
-                  <button 
+                  <button
                     className="btn-ghost"
                     onClick={() => handleEditEquipment(equipment)}
                   >
                     Editar
                   </button>
-                  <button 
+                  <button
                     className="btn-ghost text-red-600 hover:text-red-700"
                     onClick={() => handleDeleteEquipment(equipment.id)}
                   >
@@ -245,7 +265,7 @@ export default function EquiposPage() {
       </motion.div>
 
       {/* Empty State */}
-      {filteredEquipments.length === 0 && !isLoading && (
+      {equipments.length === 0 && !isLoading && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -259,8 +279,8 @@ export default function EquiposPage() {
           <p className="text-gray-600 mb-6">
             {searchTerm ? 'Intenta ajustar los filtros de búsqueda' : 'Comienza agregando tu primer equipo médico'}
           </p>
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={() => searchTerm ? setSearchTerm('') : openCreateModal()}
           >
             {searchTerm ? 'Limpiar filtros' : 'Agregar Equipo'}
@@ -277,7 +297,7 @@ export default function EquiposPage() {
         }}
         title={
           modalType === 'create' ? 'Nuevo Equipo' :
-          modalType === 'edit' ? 'Editar Equipo' : 'Detalles del Equipo'
+            modalType === 'edit' ? 'Editar Equipo' : 'Detalles del Equipo'
         }
         size="lg"
       >
@@ -318,11 +338,10 @@ export default function EquiposPage() {
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Estado:</span>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                      selectedEquipment.estado === 'operativo' ? 'status-operativo' :
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${selectedEquipment.estado === 'operativo' ? 'status-operativo' :
                       selectedEquipment.estado === 'mantenimiento' ? 'status-mantenimiento' :
-                      'status-fuera-servicio'
-                    }`}>
+                        'status-fuera-servicio'
+                      }`}>
                       {selectedEquipment.estado}
                     </span>
                   </div>
@@ -347,7 +366,7 @@ export default function EquiposPage() {
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-              <button 
+              <button
                 className="btn-ghost"
                 onClick={() => {
                   setModalType('edit');
@@ -355,7 +374,7 @@ export default function EquiposPage() {
               >
                 Editar
               </button>
-              <button 
+              <button
                 className="btn-ghost"
                 onClick={() => {
                   setModal(false);

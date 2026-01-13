@@ -241,7 +241,10 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
             className="!text-gray-900"
             style={{ color: '#1a1a1a' }}
           >
-            {isSubmitting ? 'Creando...' : 'Crear Equipo'}
+            {isSubmitting
+              ? (equipment ? 'Guardando...' : 'Creando...')
+              : (equipment ? 'Guardar Cambios' : 'Crear Equipo')
+            }
           </Button>
         </div>
       </form>

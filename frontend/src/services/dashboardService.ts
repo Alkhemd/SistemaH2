@@ -26,6 +26,10 @@ class DashboardService {
   async getActividadReciente(): Promise<{ data: RecentActivity[] | null; error: any }> {
     return backendClient.get<RecentActivity[]>('/dashboard/activity');
   }
+
+  async getChartData(): Promise<{ data: any | null; error: any }> {
+    return backendClient.get('/dashboard/charts');
+  }
 }
 
 export const dashboardService = new DashboardService();

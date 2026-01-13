@@ -15,8 +15,14 @@ export interface Cliente {
 }
 
 class ClientesService {
-  async getAll(): Promise<{ data: Cliente[] | null; error: any }> {
-    return backendClient.get<Cliente[]>('/clientes');
+  async getAll(params?: { page?: number; limit?: number; search?: string }): Promise<{ data: Cliente[] | null; pagination?: any; error: any }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+
+    const endpoint = queryParams.toString() ? `/clientes?${queryParams}` : '/clientes';
+    return backendClient.get<Cliente[]>(endpoint);
   }
 
   async create(data: Omit<Cliente, 'cliente_id'>): Promise<{ data: Cliente | null; error: any }> {

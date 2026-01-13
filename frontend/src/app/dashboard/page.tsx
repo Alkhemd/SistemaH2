@@ -3,62 +3,61 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { dashboardService } from '@/services/dashboardService';
+import dynamic from 'next/dynamic';
 import {
   CubeIcon,
   ExclamationTriangleIcon,
   ClockIcon,
-  CheckCircleIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { showToast } from '@/components/ui/Toast';
+
+// Dynamically import charts to avoid SSR issues
+const EquipmentStatusChart = dynamic(() => import('@/components/charts/EquipmentStatusChart'), { ssr: false });
+const OrdersPriorityChart = dynamic(() => import('@/components/charts/OrdersPriorityChart'), { ssr: false });
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any>(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
 
-        // Obtener estadísticas desde el backend
-        console.log('🔍 Cargando estadísticas del dashboard...');
-        const statsResponse = await dashboardService.getEstadisticas();
+        // Hacer las 3 peticiones en PARALELO
+        const [statsResponse, activityResponse, chartsResponse] = await Promise.all([
+          dashboardService.getEstadisticas(),
+          dashboardService.getActividadReciente(),
+          dashboardService.getChartData()
+        ]);
 
-        console.log('📊 Respuesta de estadísticas:', statsResponse);
-
+        // Procesar estadísticas
         if (statsResponse.error) {
-          console.error('❌ Error en statsResponse:', statsResponse.error);
           throw new Error(statsResponse.error.message);
         }
-
-        console.log('✅ Datos de estadísticas:', statsResponse.data);
         setStats(statsResponse.data);
 
-        // Cargar actividad reciente desde Supabase
-        console.log('🔍 Cargando actividad reciente...');
-        const activityResponse = await dashboardService.getActividadReciente();
-
-        if (activityResponse.error) {
-          console.warn('⚠️ Error al cargar actividad reciente:', activityResponse.error);
-          setRecentActivity([]);
-        } else {
-          console.log('✅ Actividad reciente:', activityResponse.data);
+        // Procesar actividad reciente
+        if (!activityResponse.error) {
           setRecentActivity(activityResponse.data || []);
+        }
+
+        // Procesar datos de gráficas
+        if (!chartsResponse.error) {
+          setChartData(chartsResponse.data);
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
         showToast.error('Error al cargar estadísticas del dashboard');
-        // Datos de fallback
         setStats({
           totalEquipments: 0,
           openOrders: 0,
           maintenanceEquipments: 0,
           operativeEquipments: 0,
         });
-        setRecentActivity([]);
       } finally {
         setIsLoading(false);
       }
@@ -86,7 +85,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header  */}
       <div className="animate-fade-in">
         <h1 className="text-4xl font-bold neuro-text-primary mb-2">
           Dashboard
@@ -94,11 +93,6 @@ export default function DashboardPage() {
         <p className="text-lg neuro-text-secondary">
           Vista general del sistema de gestión médica
         </p>
-        {stats && (
-          <p className="text-sm neuro-text-tertiary mt-2">
-            Datos cargados: {stats.totalEquipments} equipos, {stats.openOrders} órdenes, {stats.maintenanceEquipments} en mantenimiento, {stats.operativeEquipments} operativos
-          </p>
-        )}
       </div>
 
       {/* Stats Grid */}
@@ -107,34 +101,30 @@ export default function DashboardPage() {
           {
             title: 'Total Equipos',
             value: stats?.totalEquipments?.toString() || '0',
-            change: '+12%',
-            changeType: 'positive' as const,
             icon: CubeIcon,
-            description: 'equipos registrados'
+            description: 'equipos registrados',
+            color: 'blue'
           },
           {
             title: 'Órdenes Abiertas',
             value: stats?.openOrders?.toString() || '0',
-            change: '-8%',
-            changeType: 'negative' as const,
             icon: ExclamationTriangleIcon,
-            description: 'pendientes'
+            description: 'pendientes',
+            color: 'red'
           },
           {
             title: 'En Mantenimiento',
             value: stats?.maintenanceEquipments?.toString() || '0',
-            change: '+5%',
-            changeType: 'positive' as const,
             icon: ClockIcon,
-            description: 'equipos'
+            description: 'equipos',
+            color: 'amber'
           },
           {
             title: 'Operativos',
             value: stats?.operativeEquipments?.toString() || '0',
-            change: '+23%',
-            changeType: 'positive' as const,
             icon: CheckCircleIcon,
-            description: 'funcionando'
+            description: 'funcionando',
+            color: 'green'
           }
         ].map((stat: any, index: number) => (
           <div key={stat.title} className="card" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -147,42 +137,13 @@ export default function DashboardPage() {
                   <p className="text-4xl font-bold neuro-text-primary mb-2">
                     {stat.value}
                   </p>
+                  <p className="text-sm neuro-text-tertiary">
+                    {stat.description}
+                  </p>
                 </div>
                 <div className="w-12 h-12 neuro-convex-sm flex items-center justify-center">
                   <stat.icon className="w-6 h-6 neuro-text-secondary" />
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {stat.changeType === 'positive' ? (
-                    <ArrowTrendingUpIcon className="icon-sm text-green-500" />
-                  ) : (
-                    <ArrowTrendingDownIcon className="icon-sm text-red-500" />
-                  )}
-                  <span className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {stat.change}
-                  </span>
-                  <span className="text-sm neuro-text-secondary">
-                    {stat.description}
-                  </span>
-                </div>
-              </div>
-
-              {/* Mini chart */}
-              <div className="mt-4 flex items-end justify-between h-8 neuro-concave-sm p-1">
-                {[20, 25, 22, 30, 28, 35, 32].map((value: number, i: number) => (
-                  <div
-                    key={i}
-                    className={`w-2 rounded-sm transition-all duration-300 ${stat.changeType === 'positive' ? 'bg-green-400' : 'bg-red-400'
-                      }`}
-                    style={{
-                      height: `${Math.max((value / 35) * 100, 10)}%`,
-                      animationDelay: `${0.5 + i * 0.1}s`
-                    }}
-                  />
-                ))}
               </div>
             </div>
           </div>
@@ -192,6 +153,31 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Charts Grid */}
+      {chartData && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          {/* Equipment Status Chart */}
+          <div className="card">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold neuro-text-primary mb-4">
+                Distribución de Equipos
+              </h2>
+              <EquipmentStatusChart data={chartData.equipmentByStatus || []} />
+            </div>
+          </div>
+
+          {/* Orders Priority Chart */}
+          <div className="card">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold neuro-text-primary mb-4">
+                Órdenes por Prioridad
+              </h2>
+              <OrdersPriorityChart data={chartData.ordersByPriority || []} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="card animate-slide-up" style={{ animationDelay: '0.3s' }}>
@@ -215,8 +201,8 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`w-3 h-3 rounded-full ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
-                        activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' :
-                          'bg-red-500'
+                      activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' :
+                        'bg-red-500'
                       }`} />
                     <div>
                       <p className="font-medium neuro-text-primary">
@@ -233,13 +219,13 @@ export default function DashboardPage() {
                     </p>
                     <div className="flex items-center space-x-2">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
-                          activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
+                        activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
                         }`}>
                         {activity.type || 'Normal'}
                       </span>
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
-                          activity.status === 'En_Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' :
-                            'text-red-600 bg-red-50'
+                        activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' :
+                          'text-red-600 bg-red-50'
                         }`}>
                         {activity.status?.replace('_', ' ') || 'Pendiente'}
                       </span>

@@ -2,20 +2,65 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
 
-// GET all equipos
+// GET all equipos with pagination and search
 router.get('/', async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const search = req.query.search || '';
+        const offset = (page - 1) * limit;
+
+        let query = supabase
             .from('equipo')
             .select(`
-        *,
-        fabricante:fabricante_id(fabricante_id, nombre),
-        modalidad:modalidad_id(modalidad_id, codigo, descripcion),
-        cliente:cliente_id(cliente_id, nombre)
-      `);
+                *,
+                fabricante:fabricante_id(fabricante_id, nombre),
+                modalidad:modalidad_id(modalidad_id, codigo, descripcion),
+                cliente:cliente_id(cliente_id, nombre)
+            `, { count: 'exact' });
+
+        // Si hay búsqueda, buscar en toda la BD (ignorar paginación)
+        if (search.trim()) {
+            // Búsqueda global - no pagination
+            query = query.or(`modelo.ilike.%${search}%,numero_serie.ilike.%${search}%`);
+
+            const { data, error, count } = await query.order('equipo_id', { ascending: false });
+
+            if (error) throw error;
+
+            return res.json({
+                data,
+                pagination: {
+                    page: 1,
+                    limit: count || 0,
+                    total: count || 0,
+                    totalPages: 1,
+                    isSearch: true
+                },
+                error: null
+            });
+        }
+
+        // Sin búsqueda - paginación normal
+        query = query
+            .range(offset, offset + limit - 1)
+            .order('equipo_id', { ascending: false });
+
+        const { data, error, count } = await query;
 
         if (error) throw error;
-        res.json({ data, error: null });
+
+        res.json({
+            data,
+            pagination: {
+                page,
+                limit,
+                total: count || 0,
+                totalPages: Math.ceil((count || 0) / limit),
+                isSearch: false
+            },
+            error: null
+        });
     } catch (error) {
         console.error('Error getting equipos:', error);
         res.status(500).json({ data: null, error: error.message });
