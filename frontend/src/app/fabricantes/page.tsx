@@ -21,7 +21,7 @@ export default function FabricantesPage() {
   // Filtrar fabricantes con useMemo para optimizar
   const filteredFabricantes = useMemo(() => {
     if (!searchTerm) return fabricantes;
-    
+
     const term = searchTerm.toLowerCase();
     return fabricantes.filter(fabricante =>
       fabricante.nombre?.toLowerCase().includes(term) ||
@@ -47,7 +47,7 @@ export default function FabricantesPage() {
   // Manejar edición
   const handleEditFabricante = async (data: any) => {
     if (!selectedFabricante) return;
-    
+
     try {
       await updateFabricante(parseInt(selectedFabricante.id), {
         nombre: data.nombre,
@@ -82,13 +82,13 @@ export default function FabricantesPage() {
         <p className="text-lg neuro-text-secondary mb-4">
           Gestión de fabricantes de equipos médicos
         </p>
-        <Button
+        <button
           onClick={() => setIsCreateModalOpen(true)}
           className="neuro-button-white"
         >
           <PlusIcon className="w-5 h-5" />
           <span>Nuevo Fabricante</span>
-        </Button>
+        </button>
       </div>
 
       {/* Controles */}
@@ -125,58 +125,58 @@ export default function FabricantesPage() {
         ) : (
           <AnimatePresence mode="popLayout">
             {filteredFabricantes.map((fabricante, index) => (
-            <motion.div
-              key={fabricante.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ delay: index * 0.1 }}
-              className="card hover:shadow-lg transition-all duration-200 cursor-pointer"
-              onClick={() => handleViewFabricante(fabricante)}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <BuildingOfficeIcon className="w-6 h-6 text-blue-600" />
+              <motion.div
+                key={fabricante.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ delay: index * 0.1 }}
+                className="card hover:shadow-lg transition-all duration-200 cursor-pointer"
+                onClick={() => handleViewFabricante(fabricante)}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <BuildingOfficeIcon className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-lg">
+                          {fabricante.nombre}
+                        </h3>
+                        <p className="text-sm text-gray-500">{fabricante.pais}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 text-lg">
-                        {fabricante.nombre}
-                      </h3>
-                      <p className="text-sm text-gray-500">{fabricante.pais}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>Teléfono:</span>
+                      <span className="font-medium">{fabricante.soporte_tel || 'N/A'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>Website:</span>
+                      <span className="font-medium truncate ml-2">{fabricante.web || 'N/A'}</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Teléfono:</span>
-                    <span className="font-medium">{fabricante.soporte_tel || 'N/A'}</span>
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(fabricante);
+                      }}
+                      className="flex-1"
+                    >
+                      Editar
+                    </Button>
                   </div>
-
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>Website:</span>
-                    <span className="font-medium truncate ml-2">{fabricante.web || 'N/A'}</span>
-                  </div>
                 </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditClick(fabricante);
-                    }}
-                    className="flex-1"
-                  >
-                    Editar
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
           </AnimatePresence>
         )}
       </div>
@@ -234,49 +234,51 @@ export default function FabricantesPage() {
         title="Detalles del Fabricante"
       >
         {selectedFabricante && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre
-                </label>
-                <p className="text-gray-900">{selectedFabricante.nombre}</p>
+          <div className="p-6 space-y-6">
+            {/* Header with Icon */}
+            <div className="flex items-center space-x-4 pb-4 border-b border-gray-100">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+                <BuildingOfficeIcon className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  País
-                </label>
-                <p className="text-gray-900">{selectedFabricante.pais}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Teléfono
-                </label>
-                <p className="text-gray-900">{selectedFabricante.soporte_tel || 'N/A'}</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Website
-                </label>
-                <p className="text-gray-900">{selectedFabricante.web || 'N/A'}</p>
+                <h3 className="text-xl font-bold text-[#1D1D1F]">{selectedFabricante.nombre}</h3>
+                <p className="text-sm text-[#86868B] mt-0.5">{selectedFabricante.pais}</p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
+            {/* Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">País</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedFabricante.pais || 'No especificado'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Teléfono Soporte</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedFabricante.soporte_tel || 'No especificado'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 md:col-span-2">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Website</p>
+                <p className="text-[#1D1D1F] font-semibold break-all">{selectedFabricante.web || 'No especificado'}</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
                 onClick={() => setIsViewModalOpen(false)}
               >
                 Cerrar
-              </Button>
-              <Button
+              </button>
+              <button
+                className="px-4 py-2.5 text-sm font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-xl transition-colors"
                 onClick={() => {
                   setIsViewModalOpen(false);
                   setIsEditModalOpen(true);
                 }}
               >
-                Editar
-              </Button>
+                Editar Fabricante
+              </button>
             </div>
           </div>
         )}

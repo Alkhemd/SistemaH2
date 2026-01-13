@@ -2,6 +2,22 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
 
+// GET all clientes without pagination (for dropdowns)
+router.get('/all', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('cliente')
+            .select('cliente_id, nombre, ciudad, estado')
+            .order('nombre', { ascending: true });
+
+        if (error) throw error;
+        res.json({ data, error: null });
+    } catch (error) {
+        console.error('Error getting all clientes:', error);
+        res.status(500).json({ data: null, error: error.message });
+    }
+});
+
 // GET all clientes with equipment count, pagination and search
 router.get('/', async (req, res) => {
     try {

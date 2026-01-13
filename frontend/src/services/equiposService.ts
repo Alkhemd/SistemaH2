@@ -20,6 +20,11 @@ export interface Equipo {
 }
 
 class EquiposService {
+  // Get equipment by client ID (for cascading dropdowns)
+  async getByClient(clienteId: number): Promise<{ data: Equipo[] | null; error: any }> {
+    return backendClient.get<Equipo[]>(`/equipos/by-client/${clienteId}`);
+  }
+
   async getAll(params?: { page?: number; limit?: number; search?: string }): Promise<{ data: Equipo[] | null; pagination?: any; error: any }> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());

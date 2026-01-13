@@ -26,6 +26,9 @@ import { useTecnicos } from '@/hooks/useCatalogs';
 import { showToast } from '@/components/ui/Toast';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import { useStore } from '@/store/useStore';
+import { formatDateTime } from '@/lib/utils';
+import { clientesService } from '@/services/clientesService';
+import { equiposService } from '@/services/equiposService';
 
 interface Order {
   id: string;
@@ -66,6 +69,11 @@ export default function OrdenesPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Estados para dropdowns en cascada
+  const [allClients, setAllClients] = useState<any[]>([]);
+  const [clientEquipments, setClientEquipments] = useState<any[]>([]);
+  const [isLoadingDropdowns, setIsLoadingDropdowns] = useState(false);
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     equipo_id: 0,
@@ -91,8 +99,57 @@ export default function OrdenesPage() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [openMenuId]);
 
+  // Cargar todos los clientes para el dropdown cuando se abre el modal
+  useEffect(() => {
+    const loadAllClients = async () => {
+      try {
+        const { data, error } = await clientesService.getAllForDropdown();
+        if (error) throw error;
+        setAllClients(data || []);
+      } catch (err) {
+        console.error('Error loading clients for dropdown:', err);
+      }
+    };
+    if (isModalOpen) {
+      loadAllClients();
+    }
+  }, [isModalOpen]);
+
+  // Cargar equipos cuando cambia el cliente seleccionado
+  useEffect(() => {
+    const loadClientEquipments = async () => {
+      if (!formData.cliente_id || formData.cliente_id === 0) {
+        setClientEquipments([]);
+        return;
+      }
+      try {
+        setIsLoadingDropdowns(true);
+        const { data, error } = await equiposService.getByClient(formData.cliente_id);
+        if (error) throw error;
+        setClientEquipments(data || []);
+      } catch (err) {
+        console.error('Error loading client equipments:', err);
+        setClientEquipments([]);
+      } finally {
+        setIsLoadingDropdowns(false);
+      }
+    };
+    loadClientEquipments();
+  }, [formData.cliente_id]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    // Si cambia el cliente, resetear el equipo seleccionado
+    if (name === 'cliente_id') {
+      setFormData((prev: any) => ({
+        ...prev,
+        cliente_id: value ? parseInt(value) : 0,
+        equipo_id: 0 // Reset equipo when client changes
+      }));
+      return;
+    }
+
     setFormData((prev: any) => ({
       ...prev,
       [name]: name.includes('_id') ? (value ? parseInt(value) : 0) : value
@@ -121,6 +178,7 @@ export default function OrdenesPage() {
       await createOrder({
         equipo_id: formData.equipo_id,
         cliente_id: formData.cliente_id,
+        tipo: formData.tipo,
         prioridad: formData.prioridad.charAt(0).toUpperCase() + formData.prioridad.slice(1),
         estado: formData.tipo === 'preventivo' ? 'En Proceso' : 'Abierta',
         falla_reportada: formData.descripcion || formData.titulo,
@@ -185,6 +243,14 @@ export default function OrdenesPage() {
         estado: editFormData.estado,
         falla_reportada: editFormData.descripcion || editFormData.titulo
       });
+      // Manually refresh with current filters to ensure UI sync
+      await fetchOrdenes({
+        page: currentPage,
+        limit: 10,
+        search: debouncedSearch || undefined,
+        prioridad: selectedPrioridad || undefined,
+        estado: selectedEstado || undefined,
+      });
       showToast.success('¡Orden actualizada exitosamente!');
       setIsEditModalOpen(false);
     } catch (error: any) {
@@ -212,6 +278,14 @@ export default function OrdenesPage() {
     setIsLoading(true);
     try {
       await updateOrder(parseInt(statusOrder.id), { estado: newStatus });
+      // Manually refresh with current filters to ensure UI sync
+      await fetchOrdenes({
+        page: currentPage,
+        limit: 10,
+        search: debouncedSearch || undefined,
+        prioridad: selectedPrioridad || undefined,
+        estado: selectedEstado || undefined,
+      });
       showToast.success('Estado actualizado');
       setIsStatusModalOpen(false);
     } catch (error) {
@@ -303,12 +377,39 @@ export default function OrdenesPage() {
 
   const getStatusIcon = (estado: Order['estado']) => {
     switch (estado) {
-      case 'abierta':
-        return <Clock size={16} className="text-red-500" />;
-      case 'proceso':
-        return <Settings size={16} className="text-yellow-500" />;
-      case 'cerrada':
-        return <CheckCircle size={16} className="text-green-500" />;
+      case 'abierta': return <Clock size={14} />;
+      case 'proceso': return <Settings size={14} />;
+      case 'cerrada': return <CheckCircle size={14} />;
+      default: return <Clock size={14} />;
+    }
+  };
+
+  const getTypeStyles = (tipo: Order['tipo']) => {
+    switch (tipo) {
+      case 'correctivo':
+        return {
+          color: 'bg-red-50 text-red-700 border-red-100',
+          icon: <AlertTriangle size={12} />,
+          label: 'Correctivo'
+        };
+      case 'preventivo':
+        return {
+          color: 'bg-blue-50 text-blue-700 border-blue-100',
+          icon: <CheckCircle size={12} />,
+          label: 'Preventivo'
+        };
+      case 'calibracion':
+        return {
+          color: 'bg-purple-50 text-purple-700 border-purple-100',
+          icon: <RefreshCw size={12} />,
+          label: 'Calibración'
+        };
+      default:
+        return {
+          color: 'bg-gray-50 text-gray-700 border-gray-100',
+          icon: <FileText size={12} />,
+          label: tipo
+        };
     }
   };
 
@@ -413,13 +514,14 @@ export default function OrdenesPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">ID</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Equipo</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Cliente</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Prioridad</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Estado</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Fecha</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm">Acciones</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">ID</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Equipo</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Tipo</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Prioridad</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Estado</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Cliente</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Fecha</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -438,38 +540,56 @@ export default function OrdenesPage() {
                     </td>
 
                     <td className="py-4 px-4">
-                      <div>
-                        <p className="font-medium text-[#1D1D1F] text-sm">
+                      <div className="flex flex-col">
+                        <p className="font-semibold text-[#1D1D1F] text-sm leading-tight">
                           {order.equipo.modelo}
                         </p>
-                        <p className="text-xs text-[#86868B]">
-                          {order.equipo.fabricante}
+                        <p className="text-[11px] text-[#86868B] mt-0.5">
+                          {order.equipo.fabricante} • {order.equipo.numeroSerie}
                         </p>
                       </div>
                     </td>
 
                     <td className="py-4 px-4">
-                      <span className="text-sm text-[#6E6E73]">{order.cliente}</span>
+                      {(() => {
+                        const styles = getTypeStyles(order.tipo);
+                        return (
+                          <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${styles.color}`}>
+                            {styles.icon}
+                            <span>{styles.label}</span>
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(order.prioridad)}`}>
+                      <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${getPriorityColor(order.prioridad)}`}>
                         {getPriorityIcon(order.prioridad)}
                         <span className="capitalize">{order.prioridad}</span>
                       </div>
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.estado)}`}>
+                      <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusColor(order.estado)}`}>
                         {getStatusIcon(order.estado)}
                         <span className="capitalize">{order.estado}</span>
                       </div>
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className="flex items-center space-x-1 text-sm text-[#6E6E73]">
-                        <Calendar size={14} />
-                        <span>{order.fechaCreacion}</span>
+                      <span className="text-sm text-[#424245] font-medium">{order.cliente}</span>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col text-[#6E6E73]">
+                        <div className="flex items-center space-x-1 text-sm font-medium text-[#1D1D1F]">
+                          <Calendar size={12} className="text-[#86868B]" />
+                          <span>{formatDateTime(order.fechaCreacion).split(',')[0]}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-[11px] mt-0.5 ml-4">
+                          <Clock size={10} />
+                          <span>{formatDateTime(order.fechaCreacion).split(',')[1]}</span>
+                        </div>
                       </div>
                     </td>
 
@@ -650,25 +770,7 @@ export default function OrdenesPage() {
               <div>
                 <h3 className="text-lg font-semibold text-[#1D1D1F] mb-4">Información del Equipo</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#6E6E73] mb-2">
-                      Equipo *
-                    </label>
-                    <select
-                      name="equipo_id"
-                      value={formData.equipo_id}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      required
-                    >
-                      <option value="0">Seleccionar equipo...</option>
-                      {equipments.map((equipo: any) => (
-                        <option key={equipo.id} value={equipo.id}>
-                          {equipo.modelo} - {equipo.numeroSerie}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Cliente PRIMERO */}
                   <div>
                     <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                       Cliente *
@@ -681,9 +783,36 @@ export default function OrdenesPage() {
                       required
                     >
                       <option value="0">Seleccionar cliente...</option>
-                      {clients.map((cliente: any) => (
-                        <option key={cliente.id} value={cliente.id}>
+                      {allClients.map((cliente: any) => (
+                        <option key={cliente.cliente_id} value={cliente.cliente_id}>
                           {cliente.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* Equipo DESPUÉS (filtrado por cliente) */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#6E6E73] mb-2">
+                      Equipo * {isLoadingDropdowns && <span className="text-xs text-blue-500">(Cargando...)</span>}
+                    </label>
+                    <select
+                      name="equipo_id"
+                      value={formData.equipo_id}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      required
+                      disabled={!formData.cliente_id || formData.cliente_id === 0}
+                    >
+                      <option value="0">
+                        {!formData.cliente_id || formData.cliente_id === 0
+                          ? 'Primero selecciona un cliente...'
+                          : clientEquipments.length === 0
+                            ? 'Este cliente no tiene equipos'
+                            : 'Seleccionar equipo...'}
+                      </option>
+                      {clientEquipments.map((equipo: any) => (
+                        <option key={equipo.equipo_id} value={equipo.equipo_id}>
+                          {equipo.modelo} - {equipo.numero_serie}
                         </option>
                       ))}
                     </select>
@@ -1034,9 +1163,11 @@ export default function OrdenesPage() {
                   onChange={(e) => setEditFormData({ ...editFormData, prioridad: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="critica">Crítica</option>
-                  <option value="alta">Alta</option>
-                  <option value="normal">Normal</option>
+                  <option value="Crítica">Crítica</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Media">Media</option>
+                  <option value="Baja">Baja</option>
+                  <option value="Normal">Normal</option>
                 </select>
               </div>
               <div>
@@ -1046,9 +1177,10 @@ export default function OrdenesPage() {
                   onChange={(e) => setEditFormData({ ...editFormData, estado: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="abierta">Abierta</option>
-                  <option value="proceso">En Proceso</option>
-                  <option value="cerrada">Cerrada</option>
+                  <option value="Abierta">Abierta</option>
+                  <option value="En Proceso">En Proceso</option>
+                  <option value="En Espera">En Espera</option>
+                  <option value="Cerrada">Cerrada</option>
                 </select>
               </div>
               <div>
@@ -1094,9 +1226,10 @@ export default function OrdenesPage() {
                   onChange={(e) => setNewStatus(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="abierta">Abierta</option>
-                  <option value="proceso">En Proceso</option>
-                  <option value="cerrada">Cerrada</option>
+                  <option value="Abierta">Abierta</option>
+                  <option value="En Proceso">En Proceso</option>
+                  <option value="En Espera">En Espera</option>
+                  <option value="Cerrada">Cerrada</option>
                 </select>
               </div>
               <div className="flex justify-end space-x-3 pt-4">

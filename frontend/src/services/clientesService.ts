@@ -15,6 +15,11 @@ export interface Cliente {
 }
 
 class ClientesService {
+  // Get all clients without pagination (for dropdowns)
+  async getAllForDropdown(): Promise<{ data: Cliente[] | null; error: any }> {
+    return backendClient.get<Cliente[]>('/clientes/all');
+  }
+
   async getAll(params?: { page?: number; limit?: number; search?: string }): Promise<{ data: Cliente[] | null; pagination?: any; error: any }> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());

@@ -2,6 +2,30 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
 
+// GET equipos by client ID (for cascading dropdowns)
+router.get('/by-client/:clienteId', async (req, res) => {
+    try {
+        const { clienteId } = req.params;
+
+        const { data, error } = await supabase
+            .from('equipo')
+            .select(`
+                equipo_id,
+                modelo,
+                numero_serie,
+                fabricante:fabricante_id(fabricante_id, nombre)
+            `)
+            .eq('cliente_id', clienteId)
+            .order('modelo', { ascending: true });
+
+        if (error) throw error;
+        res.json({ data, error: null });
+    } catch (error) {
+        console.error('Error getting equipos by client:', error);
+        res.status(500).json({ data: null, error: error.message });
+    }
+});
+
 // GET all equipos with pagination and search
 router.get('/', async (req, res) => {
     try {

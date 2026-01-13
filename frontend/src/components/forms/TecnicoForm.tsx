@@ -52,6 +52,42 @@ const especialidadOptions = [
   { value: 'CATH', label: 'Cateterismo (CATH)' },
 ];
 
+// Estados de México
+const estadosMexico = [
+  'Aguascalientes',
+  'Baja California',
+  'Baja California Sur',
+  'Campeche',
+  'Chiapas',
+  'Chihuahua',
+  'Ciudad de México',
+  'Coahuila',
+  'Colima',
+  'Durango',
+  'Estado de México',
+  'Guanajuato',
+  'Guerrero',
+  'Hidalgo',
+  'Jalisco',
+  'Michoacán',
+  'Morelos',
+  'Nayarit',
+  'Nuevo León',
+  'Oaxaca',
+  'Puebla',
+  'Querétaro',
+  'Quintana Roo',
+  'San Luis Potosí',
+  'Sinaloa',
+  'Sonora',
+  'Tabasco',
+  'Tamaulipas',
+  'Tlaxcala',
+  'Veracruz',
+  'Yucatán',
+  'Zacatecas',
+];
+
 export const TecnicoForm: React.FC<TecnicoFormProps> = ({
   tecnico,
   onSubmit,
@@ -146,14 +182,19 @@ export const TecnicoForm: React.FC<TecnicoFormProps> = ({
 
             <div>
               <label className="form-label">
-                Ciudad Base
+                Estado/Ciudad Base
               </label>
-              <input
+              <select
                 {...register('base_ciudad')}
-                type="text"
                 className={`input-field ${errors.base_ciudad ? 'border-red-500' : ''}`}
-                placeholder="Ciudad de México"
-              />
+              >
+                <option value="">Seleccionar estado...</option>
+                {estadosMexico.map(estado => (
+                  <option key={estado} value={estado}>
+                    {estado}
+                  </option>
+                ))}
+              </select>
               {errors.base_ciudad && (
                 <p className="form-error">{errors.base_ciudad.message}</p>
               )}
