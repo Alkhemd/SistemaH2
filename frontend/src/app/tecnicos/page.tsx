@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { ActionCard } from '@/components/ui/ActionCard';
 import { TecnicoForm } from '@/components/forms/TecnicoForm';
-import { useTecnicos } from '@/hooks/useCatalogs';
+import { tecnicosService } from '@/services/tecnicosService';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const especialidadLabels = {
@@ -24,38 +25,56 @@ const especialidadLabels = {
 };
 
 export default function TecnicosPage() {
-  const { tecnicos, isLoading, createTecnico, updateTecnico, deleteTecnico } = useTecnicos();
+  const [tecnicos, setTecnicos] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTecnico, setSelectedTecnico] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Filtrar técnicos con useMemo para optimizar
-  const filteredTecnicos = useMemo(() => {
-    if (!searchTerm) return tecnicos;
+  // Fetch paginado de técnicos
+  const fetchTecnicos = useCallback(async (page: number, search: string) => {
+    setIsLoading(true);
+    try {
+      const { data, pagination: pag } = await tecnicosService.getPaginated(page, 10, search);
+      setTecnicos(data || []);
+      setPagination(pag);
+    } catch (error) {
+      console.error('Error fetching tecnicos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-    const term = searchTerm.toLowerCase();
-    return tecnicos.filter(tecnico =>
-      tecnico.nombre?.toLowerCase().includes(term) ||
-      tecnico.especialidad?.toLowerCase().includes(term) ||
-      tecnico.base_ciudad?.toLowerCase().includes(term)
-    );
-  }, [tecnicos, searchTerm]);
+  // Effect con debounce para búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTecnicos(searchTerm ? 1 : currentPage, searchTerm);
+      if (searchTerm && currentPage !== 1) {
+        setCurrentPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage, fetchTecnicos]);
 
   // Manejar creación
   const handleCreateTecnico = async (data: any) => {
     try {
-      await createTecnico({
+      await tecnicosService.create({
         nombre: data.nombre,
         especialidad: data.especialidad,
         certificaciones: data.certificaciones,
         telefono: data.telefono,
         email: data.email,
         base_ciudad: data.base_ciudad,
-        activo: data.activo ? 1 : 0
+        activo: data.activo
       });
       setIsCreateModalOpen(false);
+      fetchTecnicos(currentPage, searchTerm); // Refetch
     } catch (error) {
       console.error('Error al crear técnico:', error);
     }
@@ -66,17 +85,18 @@ export default function TecnicosPage() {
     if (!selectedTecnico) return;
 
     try {
-      await updateTecnico(parseInt(selectedTecnico.id), {
+      await tecnicosService.update(parseInt(selectedTecnico.tecnico_id || selectedTecnico.id), {
         nombre: data.nombre,
         especialidad: data.especialidad,
         certificaciones: data.certificaciones,
         telefono: data.telefono,
         email: data.email,
         base_ciudad: data.base_ciudad,
-        activo: data.activo ? 1 : 0
+        activo: data.activo
       });
       setIsEditModalOpen(false);
       setSelectedTecnico(null);
+      fetchTecnicos(currentPage, searchTerm); // Refetch
     } catch (error) {
       console.error('Error al editar técnico:', error);
     }
@@ -130,10 +150,38 @@ export default function TecnicosPage() {
         </div>
       </div>
 
-      {/* Results count */}
-      <p className="neuro-text-tertiary text-sm">
-        {filteredTecnicos.length} técnicos encontrados
-      </p>
+      {/* Results count and pagination */}
+      <div className="flex justify-between items-center">
+        <p className="neuro-text-tertiary text-sm">
+          {searchTerm
+            ? `${tecnicos.length} resultado${tecnicos.length !== 1 ? 's' : ''} encontrado${tecnicos.length !== 1 ? 's' : ''}`
+            : `Mostrando ${tecnicos.length} de ${pagination?.total || 0} técnicos`
+          }
+        </p>
+
+        {/* Pagination Controls */}
+        {pagination && !searchTerm && pagination.totalPages > 1 && (
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ← Anterior
+            </button>
+            <span className="neuro-text-secondary text-sm">
+              Página {currentPage} de {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              disabled={currentPage >= pagination.totalPages}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Lista de técnicos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,79 +192,66 @@ export default function TecnicosPage() {
           ))
         ) : (
           <AnimatePresence mode="popLayout">
-            {filteredTecnicos.map((tecnico, index) => (
+            {tecnicos.map((tecnico: any, index: number) => (
               <motion.div
-                key={tecnico.id}
+                key={tecnico.tecnico_id || `tecnico-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.1 }}
-                className="card hover:shadow-lg transition-all duration-200 cursor-pointer"
-                onClick={() => handleViewTecnico(tecnico)}
+                transition={{ delay: index * 0.03 }}
               >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tecnico.activo ? 'bg-green-100' : 'bg-gray-100'
-                        }`}>
-                        <UserIcon className={`w-6 h-6 ${tecnico.activo ? 'text-green-600' : 'text-gray-400'
-                          }`} />
+                <ActionCard
+                  onClick={() => handleViewTecnico(tecnico)}
+                  onEdit={() => handleEditClick(tecnico)}
+                  showActions={false}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tecnico.activo ? 'bg-green-100' : 'bg-gray-100'}`}>
+                          <UserIcon className={`w-6 h-6 ${tecnico.activo ? 'text-green-600' : 'text-gray-400'}`} />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-lg">
+                            {tecnico.nombre}
+                          </h3>
+                          <p className="text-sm text-gray-500">{tecnico.base_ciudad}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-lg">
-                          {tecnico.nombre}
-                        </h3>
-                        <p className="text-sm text-gray-500">{tecnico.base_ciudad}</p>
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${tecnico.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {tecnico.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Especialidad:</p>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
-                        {especialidadLabels[tecnico.especialidad as keyof typeof especialidadLabels] || tecnico.especialidad}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${tecnico.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {tecnico.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </div>
 
-                    {tecnico.certificaciones && (
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-gray-700 mb-1">Certificaciones:</p>
-                        <p className="text-sm text-gray-600">{tecnico.certificaciones}</p>
+                        <p className="text-sm font-medium text-gray-700 mb-1">Especialidad:</p>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm font-medium">
+                          {especialidadLabels[tecnico.especialidad as keyof typeof especialidadLabels] || tecnico.especialidad}
+                        </span>
                       </div>
-                    )}
 
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>Email:</span>
-                      <span className="font-semibold text-xs truncate ml-2">{tecnico.email || 'N/A'}</span>
+                      {tecnico.certificaciones && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-1">Certificaciones:</p>
+                          <p className="text-sm text-gray-600">{tecnico.certificaciones}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>Email:</span>
+                        <span className="font-semibold text-xs truncate ml-2">{tecnico.email || 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(tecnico);
-                      }}
-                      className="flex-1"
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                </div>
+                </ActionCard>
               </motion.div>
             ))}
           </AnimatePresence>
         )}
       </div>
 
-      {!isLoading && filteredTecnicos.length === 0 && (
+      {!isLoading && tecnicos.length === 0 && (
         <div className="text-center py-12">
           <UserIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -290,23 +325,23 @@ export default function TecnicosPage() {
               </div>
             </div>
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Info Grid - 2 columns forced */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Ciudad Base</p>
-                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.base_ciudad}</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.base_ciudad || 'N/A'}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Teléfono</p>
-                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.telefono || 'No especificado'}</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.telefono || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 md:col-span-2">
+              <div className="bg-gray-50 rounded-xl p-4 col-span-2">
                 <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Email</p>
-                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.email || 'No especificado'}</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.email || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 md:col-span-2">
+              <div className="bg-gray-50 rounded-xl p-4 col-span-2">
                 <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Certificaciones</p>
-                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.certificaciones || 'No especificadas'}</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedTecnico.certificaciones || 'N/A'}</p>
               </div>
             </div>
 

@@ -84,18 +84,46 @@ function getRelativeTime(dateString) {
     }
 }
 
-// GET recent activity
+// GET recent activity - Now uses the actividad table
 router.get('/activity', async (req, res) => {
     try {
+        // First, try to get activities from the new actividad table
+        const { data: actividadData, error: actividadError } = await supabase
+            .from('actividad')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        // If we have activities in the table, use them
+        if (!actividadError && actividadData && actividadData.length > 0) {
+            const activities = actividadData.map(act => ({
+                id: act.actividad_id,
+                type: act.tipo_operacion,
+                description: act.descripcion || act.titulo,
+                timestamp: act.created_at,
+                status: act.tipo_operacion,
+                equipment: act.titulo,
+                client: act.entidad,
+                time: getRelativeTime(act.created_at),
+                // Additional fields from actividad table
+                entidad: act.entidad,
+                entidad_id: act.entidad_id,
+                usuario: act.usuario
+            }));
+
+            return res.json({ data: activities, error: null });
+        }
+
+        // Fallback: Get recent orders if no activities in the new table
         const { data, error } = await supabase
             .from('orden_trabajo')
             .select(`
-        *,
-        equipo:equipo_id(numero_serie, modelo),
-        cliente:cliente_id(nombre)
-      `)
+                *,
+                equipo:equipo_id(numero_serie, modelo),
+                cliente:cliente_id(nombre)
+            `)
             .order('fecha_apertura', { ascending: false })
-            .limit(10); // Show 10 most recent orders
+            .limit(10);
 
         if (error) throw error;
 
@@ -112,7 +140,7 @@ router.get('/activity', async (req, res) => {
                 status: orden.estado || 'Abierta',
                 equipment: equipoInfo,
                 client: orden.cliente?.nombre || 'Cliente no especificado',
-                time: getRelativeTime(orden.fecha_apertura) // Now shows "Hace X horas/días"
+                time: getRelativeTime(orden.fecha_apertura)
             };
         });
 

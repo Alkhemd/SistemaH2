@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
 import { ModalidadForm } from '@/components/forms/ModalidadForm';
-import { useModalidades } from '@/hooks/useCatalogs';
+import { modalidadesService } from '@/services/modalidadesService';
 import { showToast } from '@/components/ui/Toast';
-import { 
+import {
   MagnifyingGlassIcon,
   PlusIcon,
   PencilIcon,
@@ -15,21 +15,39 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ModalidadesPage() {
-  const { modalidades, isLoading, createModalidad, updateModalidad, deleteModalidad } = useModalidades();
+  const [modalidades, setModalidades] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedModalidad, setSelectedModalidad] = useState<any>(null);
   const [modalType, setModalType] = useState<'create' | 'edit'>('create');
 
-  // Filtro solo para mostrar
-  const filteredModalidades = useMemo(() => {
-    if (!searchTerm) return modalidades;
-    const term = searchTerm.toLowerCase();
-    return modalidades.filter(modalidad => 
-      modalidad.codigo?.toLowerCase().includes(term) ||
-      modalidad.descripcion?.toLowerCase().includes(term)
-    );
-  }, [modalidades, searchTerm]);
+  // Fetch paginado
+  const fetchModalidades = useCallback(async (page: number, search: string) => {
+    setIsLoading(true);
+    try {
+      const { data, pagination: pag } = await modalidadesService.getPaginated(page, 10, search);
+      setModalidades(data || []);
+      setPagination(pag);
+    } catch (error) {
+      console.error('Error fetching modalidades:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Effect con debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchModalidades(searchTerm ? 1 : currentPage, searchTerm);
+      if (searchTerm && currentPage !== 1) {
+        setCurrentPage(1);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage, fetchModalidades]);
 
   const handleOpenModal = (type: 'create' | 'edit', modalidad?: any) => {
     setModalType(type);
@@ -45,17 +63,18 @@ export default function ModalidadesPage() {
   const handleSubmit = async (data: any) => {
     try {
       if (modalType === 'create') {
-        await createModalidad({
+        await modalidadesService.create({
           codigo: data.codigo,
           descripcion: data.descripcion
         });
       } else if (selectedModalidad) {
-        await updateModalidad(parseInt(selectedModalidad.id), {
+        await modalidadesService.update(parseInt(selectedModalidad.modalidad_id || selectedModalidad.id), {
           codigo: data.codigo,
           descripcion: data.descripcion
         });
       }
       handleCloseModal();
+      fetchModalidades(currentPage, searchTerm);
     } catch (error) {
       console.error('Error al guardar modalidad:', error);
     }
@@ -64,7 +83,8 @@ export default function ModalidadesPage() {
   const handleDelete = async (modalidad: any) => {
     if (window.confirm(`¿Está seguro de que desea eliminar la modalidad "${modalidad.codigo}"?`)) {
       try {
-        await deleteModalidad(parseInt(modalidad.id));
+        await modalidadesService.delete(parseInt(modalidad.modalidad_id || modalidad.id));
+        fetchModalidades(currentPage, searchTerm);
       } catch (error) {
         console.error('Error al eliminar modalidad:', error);
       }
@@ -109,10 +129,37 @@ export default function ModalidadesPage() {
         </div>
       </div>
 
-      {/* Results count */}
-      <p className="neuro-text-tertiary text-sm">
-        {filteredModalidades.length} modalidades encontradas
-      </p>
+      {/* Results count and pagination */}
+      <div className="flex justify-between items-center">
+        <p className="neuro-text-tertiary text-sm">
+          {searchTerm
+            ? `${modalidades.length} resultado${modalidades.length !== 1 ? 's' : ''} encontrado${modalidades.length !== 1 ? 's' : ''}`
+            : `Mostrando ${modalidades.length} de ${pagination?.total || 0} modalidades`
+          }
+        </p>
+
+        {pagination && !searchTerm && pagination.totalPages > 1 && (
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ← Anterior
+            </button>
+            <span className="neuro-text-secondary text-sm">
+              Página {currentPage} de {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              disabled={currentPage >= pagination.totalPages}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Lista de Modalidades */}
       <div className="neuro-card animate-fade-in">
@@ -121,7 +168,7 @@ export default function ModalidadesPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 text-gray-600">Cargando modalidades...</p>
           </div>
-        ) : filteredModalidades.length === 0 ? (
+        ) : modalidades.length === 0 ? (
           <div className="p-8 text-center">
             <TagIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">
@@ -154,9 +201,9 @@ export default function ModalidadesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredModalidades.map((modalidad, index) => (
+                {modalidades.map((modalidad: any, index: number) => (
                   <motion.tr
-                    key={modalidad.id}
+                    key={modalidad.modalidad_id || `modalidad-${index}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}

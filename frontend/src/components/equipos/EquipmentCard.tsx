@@ -1,11 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { 
-  Stethoscope, 
-  Monitor, 
-  Zap, 
-  Heart, 
+import {
+  Stethoscope,
+  Monitor,
+  Zap,
+  Heart,
   Eye,
   Scan,
   MapPin,
@@ -78,10 +78,14 @@ const EquipmentCard = ({ equipment, onClick }: EquipmentCardProps) => {
 
   return (
     <motion.div
-      whileHover={{ 
-        scale: 1.02, 
-        y: -4,
-        transition: { duration: 0.2 }
+      whileHover={{
+        scale: 1.03,
+        y: -6,
+        transition: {
+          type: "spring",
+          stiffness: 400,
+          damping: 17
+        }
       }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
@@ -89,17 +93,29 @@ const EquipmentCard = ({ equipment, onClick }: EquipmentCardProps) => {
     >
       {/* Icon/Image Section */}
       <div className="flex justify-center mb-6">
-        <div className="w-28 h-28 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full flex items-center justify-center group-hover:from-blue-100 group-hover:to-blue-200 transition-all duration-300">
-          <Icon size={48} className="text-[#0071E3]" />
-        </div>
+        <motion.div
+          className="w-28 h-28 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full flex items-center justify-center transition-all duration-500 group-hover:from-blue-100 group-hover:to-blue-200 group-hover:shadow-lg"
+          whileHover={{
+            scale: 1.1,
+            rotate: 12,
+            transition: { type: "spring", stiffness: 300, damping: 15 }
+          }}
+        >
+          <Icon size={48} className="text-[#0071E3] transition-transform duration-300" />
+        </motion.div>
       </div>
 
       {/* Equipment Info */}
       <div className="space-y-3">
         {/* Model */}
-        <h3 className="text-lg font-semibold text-[#1D1D1F] text-center truncate">
+        <motion.h3
+          className="text-lg font-semibold text-[#1D1D1F] text-center truncate"
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           {equipment.modelo}
-        </h3>
+        </motion.h3>
 
         {/* Serial Number */}
         <p className="text-sm text-[#6E6E73] text-center font-mono">
@@ -135,15 +151,32 @@ const EquipmentCard = ({ equipment, onClick }: EquipmentCardProps) => {
 
       {/* Status Badge */}
       <div className="mt-4 flex justify-center">
-        <div className={`
-          inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium
-          ${statusColors.bg} ${statusColors.text}
-        `}>
-          <div className={`w-2 h-2 rounded-full ${statusColors.dot}`} />
+        <motion.div
+          className={`
+            inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium
+            ${statusColors.bg} ${statusColors.text}
+            transition-all duration-300
+          `}
+          whileHover={{
+            scale: 1.05,
+            transition: { type: "spring", stiffness: 400 }
+          }}
+        >
+          <motion.div
+            className={`w-2 h-2 rounded-full ${statusColors.dot}`}
+            animate={{
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
           <span className="capitalize">
             {equipment.estado.replace('-', ' ')}
           </span>
-        </div>
+        </motion.div>
       </div>
 
       {/* Hover Effect Overlay */}

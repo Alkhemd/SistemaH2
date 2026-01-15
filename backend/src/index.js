@@ -11,6 +11,7 @@ const tecnicosRoutes = require('./routes/tecnicos');
 const modalidadesRoutes = require('./routes/modalidades');
 const fabricantesRoutes = require('./routes/fabricantes');
 const dashboardRoutes = require('./routes/dashboard');
+const actividadesRoutes = require('./routes/actividades');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +39,7 @@ app.use('/api/tecnicos', tecnicosRoutes);
 app.use('/api/modalidades', modalidadesRoutes);
 app.use('/api/fabricantes', fabricantesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/actividades', actividadesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

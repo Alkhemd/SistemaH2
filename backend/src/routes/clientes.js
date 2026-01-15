@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
+const { logActivity, generateTitle, getClientIP } = require('../utils/activityLogger');
 
 // GET all clientes without pagination (for dropdowns)
 router.get('/all', async (req, res) => {
@@ -93,6 +94,18 @@ router.post('/', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'CREATE',
+            entidad: 'cliente',
+            entidad_id: data?.cliente_id,
+            titulo: generateTitle('CREATE', 'cliente', data?.nombre),
+            descripcion: `Se registró el cliente ${data?.nombre} en ${data?.ciudad}, ${data?.estado}`,
+            datos_nuevo: data,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error creating cliente:', error);
@@ -112,6 +125,18 @@ router.put('/:id', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'UPDATE',
+            entidad: 'cliente',
+            entidad_id: parseInt(id),
+            titulo: generateTitle('UPDATE', 'cliente', data?.nombre),
+            descripcion: `Se actualizó la información del cliente ${data?.nombre}`,
+            datos_nuevo: data,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error updating cliente:', error);
@@ -129,6 +154,17 @@ router.delete('/:id', async (req, res) => {
             .eq('cliente_id', id);
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'DELETE',
+            entidad: 'cliente',
+            entidad_id: parseInt(id),
+            titulo: generateTitle('DELETE', 'cliente', `#${id}`),
+            descripcion: `Se eliminó el cliente con ID ${id}`,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ error: null });
     } catch (error) {
         console.error('Error deleting cliente:', error);

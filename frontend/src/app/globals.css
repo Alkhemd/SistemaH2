@@ -732,6 +732,55 @@ main {
   to { transform: rotate(360deg); }
 }
 
+/* Premium shimmer effect for cards */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Subtle glow pulse for interactive elements */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 113, 227, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 113, 227, 0.2);
+  }
+}
+
+/* Gentle float animation for cards */
+@keyframes gentleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-gentle-float {
+  animation: gentleFloat 3s ease-in-out infinite;
+}
+
 /* Overrides para compatibilidad con neumorfismo */
 .bg-gray-200 { 
   background: var(--neuro-surface);

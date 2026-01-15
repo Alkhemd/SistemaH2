@@ -49,7 +49,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
   const [modalidades, setModalidades] = useState<CatalogOption[]>([]);
 
   useEffect(() => {
-    clientesService.getAll().then(({ data }) => setClientes(data || []));
+    clientesService.getAllForDropdown().then(({ data }) => setClientes(data || []));
     fabricantesService.getAll().then(({ data }) => setFabricantes(data || []));
     modalidadesService.getAll().then(({ data }) => setModalidades(data || []));
   }, []);

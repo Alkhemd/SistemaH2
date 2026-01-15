@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
+const { logActivity, generateTitle, getClientIP } = require('../utils/activityLogger');
 
 // GET equipos by client ID (for cascading dropdowns)
 router.get('/by-client/:clienteId', async (req, res) => {
@@ -94,6 +95,8 @@ router.get('/', async (req, res) => {
 // POST create equipo
 router.post('/', async (req, res) => {
     try {
+        console.log('=== Creating equipo - Request body:', JSON.stringify(req.body, null, 2));
+
         // Get next ID
         const { data: maxIdResult } = await supabase
             .from('equipo')
@@ -104,6 +107,8 @@ router.post('/', async (req, res) => {
 
         const nextId = maxIdResult ? maxIdResult.equipo_id + 1 : 1;
         const dataWithId = { ...req.body, equipo_id: nextId };
+
+        console.log('=== Data being inserted:', JSON.stringify(dataWithId, null, 2));
 
         const { data, error } = await supabase
             .from('equipo')
@@ -117,6 +122,18 @@ router.post('/', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'CREATE',
+            entidad: 'equipo',
+            entidad_id: data?.equipo_id,
+            titulo: generateTitle('CREATE', 'equipo', data?.modelo),
+            descripcion: `Se registró el equipo ${data?.modelo} (S/N: ${data?.numero_serie})`,
+            datos_nuevo: data,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error creating equipo:', error);
@@ -141,6 +158,18 @@ router.put('/:id', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'UPDATE',
+            entidad: 'equipo',
+            entidad_id: parseInt(id),
+            titulo: generateTitle('UPDATE', 'equipo', data?.modelo),
+            descripcion: `Se actualizó el equipo ${data?.modelo}`,
+            datos_nuevo: data,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error updating equipo:', error);

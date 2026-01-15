@@ -11,6 +11,15 @@ class ModalidadesService {
     return backendClient.get<Modalidad[]>('/modalidades');
   }
 
+  async getPaginated(page = 1, limit = 20, search = ''): Promise<any> {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      search
+    });
+    return backendClient.get(`/modalidades/paginated?${params}`);
+  }
+
   async create(data: Omit<Modalidad, 'modalidad_id'>): Promise<{ data: Modalidad | null; error: any }> {
     return backendClient.post<Modalidad>('/modalidades', data);
   }

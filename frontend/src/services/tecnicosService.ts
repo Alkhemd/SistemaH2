@@ -16,6 +16,15 @@ class TecnicosService {
     return backendClient.get<Tecnico[]>('/tecnicos');
   }
 
+  async getPaginated(page = 1, limit = 20, search = ''): Promise<any> {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      search
+    });
+    return backendClient.get(`/tecnicos/paginated?${params}`);
+  }
+
   async create(data: Omit<Tecnico, 'tecnico_id'>): Promise<{ data: Tecnico | null; error: any }> {
     return backendClient.post<Tecnico>('/tecnicos', data);
   }

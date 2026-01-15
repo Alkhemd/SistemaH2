@@ -8,6 +8,7 @@ import SplitText from '@/components/animations/SplitText';
 import { useClients } from '@/hooks/useApi';
 import { ClientUI } from '@/types/equipment';
 import { Modal } from '@/components/ui/Modal';
+import { ActionCard } from '@/components/ui/ActionCard';
 import { ClientForm } from '@/components/forms/ClientForm';
 import {
   MagnifyingGlassIcon,
@@ -244,10 +245,11 @@ export default function ClientesPage() {
       {/* Clients List - Using regular divs with CSS animations for reliability */}
       <div className="space-y-4">
         {filteredClients.map((client, index) => (
-          <div
+          <ActionCard
             key={client.id}
-            className="card hover:shadow-lg transition-all duration-300 cursor-pointer animate-fade-in"
-            style={{ animationDelay: `${index * 50}ms` }}
+            onClick={() => handleViewClient(client)}
+            onEdit={() => handleEditClient(client)}
+            showActions={false}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-start space-x-4 flex-1">
@@ -313,18 +315,9 @@ export default function ClientesPage() {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <button
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                  onClick={() => handleViewClient(client)}
-                  title="Ver detalles"
-                >
-                  <EyeIcon className="icon-sm text-[#6E6E73]" />
-                </button>
-              </div>
+
             </div>
-          </div>
+          </ActionCard>
         ))}
       </div>
 
@@ -389,66 +382,78 @@ export default function ClientesPage() {
         size="lg"
       >
         {modalType === 'view' && selectedClient ? (
-          <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Información General</h3>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Nombre:</span>
-                    <p className="text-gray-900">{selectedClient!.nombre}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Tipo:</span>
-                    <p className="text-gray-900">{selectedClient!.tipo === 'publico' ? 'Público' : 'Privado'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Ciudad:</span>
-                    <p className="text-gray-900">{selectedClient!.ciudad}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Estado:</span>
-                    <p className="text-gray-900">{selectedClient!.estado}</p>
-                  </div>
-                </div>
+          <div className="p-6 space-y-6">
+            {/* Header with Icon */}
+            <div className="flex items-center space-x-4 pb-4 border-b border-gray-100">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+                <BuildingOfficeIcon className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Contacto</h3>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Responsable:</span>
-                    <p className="text-gray-900">{selectedClient!.contacto?.responsable || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Teléfono:</span>
-                    <p className="text-gray-900">{selectedClient!.contacto?.telefono || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Email:</span>
-                    <p className="text-gray-900">{selectedClient!.contacto?.email || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Equipos:</span>
-                    <p className="text-gray-900">{selectedClient!.equiposCount || 0} equipos</p>
-                  </div>
-                </div>
+                <h3 className="text-xl font-bold text-[#1D1D1F]">{selectedClient.nombre}</h3>
+                <p className="text-sm text-[#86868B] mt-0.5">
+                  {selectedClient.ciudad}, {selectedClient.estado}
+                </p>
+              </div>
+              <div className="ml-auto flex gap-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedClient.tipo === 'publico' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                  }`}>
+                  {selectedClient.tipo === 'publico' ? 'Público' : 'Privado'}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedClient.estado_cliente === 'activo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                  {selectedClient.estado_cliente === 'activo' ? 'Activo' : 'Inactivo'}
+                </span>
               </div>
             </div>
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+
+            {/* Info Grid - 2 columns forced */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Tipo</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedClient.tipo === 'publico' ? 'Público' : 'Privado'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Equipos</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedClient.equiposCount || 0} equipos</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 col-span-2">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Ubicación</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedClient.ciudad || 'N/A'}, {selectedClient.estado || 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Contacto Grid - 2 columns forced */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Responsable</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedClient.contacto?.responsable || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Teléfono</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedClient.contacto?.telefono || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 col-span-2">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Email</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedClient.contacto?.email || 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
-                className="btn-ghost"
-                onClick={() => selectedClient && handleEditClient(selectedClient)}
-              >
-                Editar
-              </button>
-              <button
-                className="btn-ghost"
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
                 onClick={() => {
                   setModalOpen(false);
                   setSelectedClient(null);
                 }}
               >
                 Cerrar
+              </button>
+              <button
+                className="px-4 py-2.5 text-sm font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-xl transition-colors"
+                onClick={() => selectedClient && handleEditClient(selectedClient)}
+              >
+                Editar Cliente
               </button>
             </div>
           </div>

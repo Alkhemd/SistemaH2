@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
+import { ActionCard } from '@/components/ui/ActionCard';
 import { SimpleEquipmentForm } from '@/components/forms/SimpleEquipmentForm';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { useStore } from '@/store/useStore';
@@ -208,9 +209,13 @@ export default function EquiposPage() {
             key={equipment.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 + index * 0.05 }}
+            transition={{ duration: 0.5, delay: 0.1 + index * 0.03 }}
           >
-            <Card hover>
+            <ActionCard
+              onClick={() => handleViewDetails(equipment.id)}
+              onEdit={() => handleEditEquipment(equipment)}
+              onDelete={() => handleDeleteEquipment(equipment.id)}
+            >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -238,28 +243,9 @@ export default function EquiposPage() {
                   <p><span className="font-medium">Modalidad:</span> {equipment.modalidad}</p>
                 </div>
 
-                <div className="mt-4 flex space-x-2">
-                  <button
-                    className="btn-ghost"
-                    onClick={() => handleViewDetails(equipment.id)}
-                  >
-                    Ver Detalles
-                  </button>
-                  <button
-                    className="btn-ghost"
-                    onClick={() => handleEditEquipment(equipment)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn-ghost text-red-600 hover:text-red-700"
-                    onClick={() => handleDeleteEquipment(equipment.id)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
+
               </div>
-            </Card>
+            </ActionCard>
           </motion.div>
         ))}
       </motion.div>
@@ -302,86 +288,86 @@ export default function EquiposPage() {
         size="lg"
       >
         {modalType === 'view' && selectedEquipment ? (
-          <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Información General</h3>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Modelo:</span>
-                    <p className="text-gray-900">{selectedEquipment.modelo}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Fabricante:</span>
-                    <p className="text-gray-900">{typeof selectedEquipment.fabricante === 'string' ? selectedEquipment.fabricante : (selectedEquipment.fabricante as any)?.nombre || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Número de Serie:</span>
-                    <p className="text-gray-900">{selectedEquipment.numeroSerie}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Modalidad:</span>
-                    <p className="text-gray-900">{typeof selectedEquipment.modalidad === 'string' ? selectedEquipment.modalidad : (selectedEquipment.modalidad as any)?.nombre || 'N/A'}</p>
-                  </div>
-                </div>
+          <div className="p-6 space-y-6">
+            {/* Header with Icon */}
+            <div className="flex items-center space-x-4 pb-4 border-b border-gray-100">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+                <CubeIcon className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Ubicación y Estado</h3>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Cliente:</span>
-                    <p className="text-gray-900">{typeof selectedEquipment.cliente === 'string' ? selectedEquipment.cliente : (selectedEquipment.cliente as any)?.nombre || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Ubicación:</span>
-                    <p className="text-gray-900">{selectedEquipment.ubicacion}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Estado:</span>
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${selectedEquipment.estado === 'operativo' ? 'status-operativo' :
-                      selectedEquipment.estado === 'mantenimiento' ? 'status-mantenimiento' :
-                        'status-fuera-servicio'
-                      }`}>
-                      {selectedEquipment.estado}
-                    </span>
-                  </div>
-                </div>
+                <h3 className="text-xl font-bold text-[#1D1D1F]">{selectedEquipment.modelo}</h3>
+                <p className="text-sm text-[#86868B] mt-0.5">
+                  {typeof selectedEquipment.fabricante === 'string' ? selectedEquipment.fabricante : (selectedEquipment.fabricante as any)?.nombre || 'N/A'} · {selectedEquipment.numeroSerie}
+                </p>
+              </div>
+              <span className={`ml-auto px-3 py-1.5 rounded-full text-xs font-medium ${selectedEquipment.estado === 'operativo' ? 'bg-green-100 text-green-800' :
+                selectedEquipment.estado === 'mantenimiento' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                {selectedEquipment.estado}
+              </span>
+            </div>
+
+            {/* Info Grid - 2 columns forced */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Fabricante</p>
+                <p className="text-[#1D1D1F] font-semibold">
+                  {typeof selectedEquipment.fabricante === 'string' ? selectedEquipment.fabricante : (selectedEquipment.fabricante as any)?.nombre || 'No especificado'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Modalidad</p>
+                <p className="text-[#1D1D1F] font-semibold">
+                  {typeof selectedEquipment.modalidad === 'string' ? selectedEquipment.modalidad : (selectedEquipment.modalidad as any)?.nombre || 'No especificado'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Cliente</p>
+                <p className="text-[#1D1D1F] font-semibold">
+                  {typeof selectedEquipment.cliente === 'string' ? selectedEquipment.cliente : (selectedEquipment.cliente as any)?.nombre || 'No especificado'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Ubicación</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedEquipment.ubicacion || 'No especificado'}</p>
               </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-4">Fechas Importantes</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <span className="text-sm font-medium text-gray-600">Instalación:</span>
-                  <p className="text-gray-900">{selectedEquipment.fechaInstalacion}</p>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-gray-600">Última Calibración:</span>
-                  <p className="text-gray-900">{selectedEquipment.ultimaCalibacion}</p>
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-gray-600">Próxima Calibración:</span>
-                  <p className="text-gray-900">{selectedEquipment.proximaCalibacion}</p>
-                </div>
+
+            {/* Fechas Grid - 3 columns forced */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Instalación</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedEquipment.fechaInstalacion || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Últ. Calibración</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedEquipment.ultimaCalibacion || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs font-medium text-[#86868B] uppercase tracking-wide mb-1">Próx. Calibración</p>
+                <p className="text-[#1D1D1F] font-semibold">{selectedEquipment.proximaCalibacion || 'N/A'}</p>
               </div>
             </div>
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
-                className="btn-ghost"
-                onClick={() => {
-                  setModalType('edit');
-                }}
-              >
-                Editar
-              </button>
-              <button
-                className="btn-ghost"
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
                 onClick={() => {
                   setModal(false);
                   setSelectedEquipment(null);
                 }}
               >
                 Cerrar
+              </button>
+              <button
+                className="px-4 py-2.5 text-sm font-medium text-white bg-[#0071E3] hover:bg-[#0077ED] rounded-xl transition-colors"
+                onClick={() => {
+                  setModalType('edit');
+                }}
+              >
+                Editar Equipo
               </button>
             </div>
           </div>

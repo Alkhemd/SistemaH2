@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
+const { logActivity, generateTitle, getClientIP } = require('../utils/activityLogger');
 
 // GET all ordenes with pagination, search and filters
 router.get('/', async (req, res) => {
@@ -137,6 +138,18 @@ router.post('/', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'CREATE',
+            entidad: 'orden_trabajo',
+            entidad_id: data?.orden_id,
+            titulo: generateTitle('CREATE', 'orden_trabajo', `#${data?.orden_id}`),
+            descripcion: data?.falla_reportada || `Nueva orden de trabajo creada`,
+            datos_nuevo: data,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error creating orden:', error);
@@ -165,6 +178,18 @@ router.put('/:id', async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'UPDATE',
+            entidad: 'orden_trabajo',
+            entidad_id: parseInt(id),
+            titulo: generateTitle('UPDATE', 'orden_trabajo', `#${id}`),
+            descripcion: `Estado: ${data?.estado} - Prioridad: ${data?.prioridad}`,
+            datos_nuevo: data,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error updating orden:', error);
@@ -194,6 +219,17 @@ router.delete('/:id', async (req, res) => {
         const { error } = await supabase.from('orden_trabajo').delete().eq('orden_id', id);
 
         if (error) throw error;
+
+        // Log activity
+        await logActivity({
+            tipo_operacion: 'DELETE',
+            entidad: 'orden_trabajo',
+            entidad_id: parseInt(id),
+            titulo: generateTitle('DELETE', 'orden_trabajo', `#${id}`),
+            descripcion: `Se eliminó la orden de trabajo #${id}`,
+            ip_address: getClientIP(req)
+        });
+
         res.json({ error: null });
     } catch (error) {
         console.error('Error deleting orden:', error);

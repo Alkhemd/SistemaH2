@@ -13,6 +13,15 @@ class FabricantesService {
     return backendClient.get<Fabricante[]>('/fabricantes');
   }
 
+  async getPaginated(page = 1, limit = 20, search = ''): Promise<any> {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      search
+    });
+    return backendClient.get(`/fabricantes/paginated?${params}`);
+  }
+
   async create(data: Omit<Fabricante, 'fabricante_id'>): Promise<{ data: Fabricante | null; error: any }> {
     return backendClient.post<Fabricante>('/fabricantes', data);
   }

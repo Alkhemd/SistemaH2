@@ -12,7 +12,7 @@ import { Equipment } from '@/lib/api';
 import { clientesService } from '@/services/clientesService';
 import { fabricantesService } from '@/services/fabricantesService';
 import { modalidadesService } from '@/services/modalidadesService';
-import { 
+import {
   CubeIcon,
   BuildingOfficeIcon,
   MapPinIcon,
@@ -61,7 +61,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
   const [modalidades, setModalidades] = useState<any[]>([]);
 
   useEffect(() => {
-    clientesService.getAll().then(({ data }) => setClientes(data || []));
+    clientesService.getAllForDropdown().then(({ data }) => setClientes(data || []));
     fabricantesService.getAll().then(({ data }) => setFabricantes(data || []));
     modalidadesService.getAll().then(({ data }) => setModalidades(data || []));
   }, []);
@@ -79,7 +79,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
       fabricante_id: equipment.fabricante_id || 0,
       modalidad_id: equipment.modalidad_id || 0,
       cliente_id: equipment.cliente_id || 0,
-  estado: equipment.estado_equipo ? mapEstadoEquipoToUI(equipment.estado_equipo) : 'operativo',
+      estado: equipment.estado_equipo ? mapEstadoEquipoToUI(equipment.estado_equipo) : 'operativo',
       ubicacion: equipment.ubicacion || '',
       fechaInstalacion: equipment.fecha_instalacion || new Date().toISOString().split('T')[0],
       ultimaCalibacion: (equipment as any).ultima_calibracion || equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
@@ -115,7 +115,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
     <motion.form
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-  onSubmit={handleFormSubmit}
+      onSubmit={handleFormSubmit}
       className="space-y-6 p-6"
     >
       {/* Header */}
@@ -136,21 +136,21 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
             <CubeIcon className="w-5 h-5 text-primary-500" />
             Información Básica
           </h4>
-          
+
           <Input
             label="Modelo"
             {...register('modelo')}
             error={errors.modelo?.message}
             placeholder="Ej: Discovery CT750 HD"
           />
-          
+
           <Input
             label="Número de Serie"
             {...register('numeroSerie')}
             error={errors.numeroSerie?.message}
             placeholder="Ej: CT750-2023-001"
           />
-          
+
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
@@ -195,7 +195,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
             <BuildingOfficeIcon className="w-5 h-5 text-primary-500" />
             Ubicación y Cliente
           </h4>
-          
+
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
@@ -214,7 +214,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
               <p className="text-sm text-red-600">{errors.cliente_id.message}</p>
             )}
           </div>
-          
+
           <Input
             label="Ubicación"
             {...register('ubicacion')}
@@ -233,8 +233,8 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
                   key={estado.value}
                   className={`
                     flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all duration-200
-                    ${watchedEstado === estado.value 
-                      ? 'border-primary-500 bg-primary-50' 
+                    ${watchedEstado === estado.value
+                      ? 'border-primary-500 bg-primary-50'
                       : 'border-gray-200 hover:border-gray-300'
                     }
                   `}
@@ -247,7 +247,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
                   />
                   <div className={`
                     w-3 h-3 rounded-full mr-3
-                    ${estado.color === 'green' ? 'bg-green-500' : 
+                    ${estado.color === 'green' ? 'bg-green-500' :
                       estado.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'}
                   `} />
                   <span className="font-medium text-gray-900">{estado.label}</span>
@@ -267,7 +267,7 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
           <CalendarIcon className="w-5 h-5 text-primary-500" />
           Fechas Importantes
         </h4>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
             label="Fecha de Instalación"
@@ -275,14 +275,14 @@ export const EquipmentForm: React.FC<EquipmentFormProps> = ({
             {...register('fechaInstalacion')}
             error={errors.fechaInstalacion?.message}
           />
-          
+
           <Input
             label="Última Calibración"
             type="date"
             {...register('ultimaCalibacion')}
             error={errors.ultimaCalibacion?.message}
           />
-          
+
           <Input
             label="Próxima Calibración"
             type="date"

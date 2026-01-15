@@ -1,44 +1,63 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BuildingOfficeIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { ActionCard } from '@/components/ui/ActionCard';
 import { FabricanteForm } from '@/components/forms/FabricanteForm';
-import { useFabricantes } from '@/hooks/useCatalogs';
+import { fabricantesService } from '@/services/fabricantesService';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 
 export default function FabricantesPage() {
-  const { fabricantes, isLoading, createFabricante, updateFabricante, deleteFabricante } = useFabricantes();
+  const [fabricantes, setFabricantes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedFabricante, setSelectedFabricante] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Filtrar fabricantes con useMemo para optimizar
-  const filteredFabricantes = useMemo(() => {
-    if (!searchTerm) return fabricantes;
+  // Fetch paginado
+  const fetchFabricantes = useCallback(async (page: number, search: string) => {
+    setIsLoading(true);
+    try {
+      const { data, pagination: pag } = await fabricantesService.getPaginated(page, 10, search);
+      setFabricantes(data || []);
+      setPagination(pag);
+    } catch (error) {
+      console.error('Error fetching fabricantes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-    const term = searchTerm.toLowerCase();
-    return fabricantes.filter(fabricante =>
-      fabricante.nombre?.toLowerCase().includes(term) ||
-      fabricante.pais?.toLowerCase().includes(term)
-    );
-  }, [fabricantes, searchTerm]);
+  // Effect con debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchFabricantes(searchTerm ? 1 : currentPage, searchTerm);
+      if (searchTerm && currentPage !== 1) {
+        setCurrentPage(1);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, currentPage, fetchFabricantes]);
 
   // Manejar creación
   const handleCreateFabricante = async (data: any) => {
     try {
-      await createFabricante({
+      await fabricantesService.create({
         nombre: data.nombre,
         pais: data.pais,
         soporte_tel: data.soporte_tel,
         web: data.web
       });
       setIsCreateModalOpen(false);
+      fetchFabricantes(currentPage, searchTerm);
     } catch (error) {
       console.error('Error al crear fabricante:', error);
     }
@@ -49,7 +68,7 @@ export default function FabricantesPage() {
     if (!selectedFabricante) return;
 
     try {
-      await updateFabricante(parseInt(selectedFabricante.id), {
+      await fabricantesService.update(parseInt(selectedFabricante.fabricante_id || selectedFabricante.id), {
         nombre: data.nombre,
         pais: data.pais,
         soporte_tel: data.soporte_tel,
@@ -57,6 +76,7 @@ export default function FabricantesPage() {
       });
       setIsEditModalOpen(false);
       setSelectedFabricante(null);
+      fetchFabricantes(currentPage, searchTerm);
     } catch (error) {
       console.error('Error al editar fabricante:', error);
     }
@@ -110,10 +130,37 @@ export default function FabricantesPage() {
         </div>
       </div>
 
-      {/* Results count */}
-      <p className="neuro-text-tertiary text-sm">
-        {filteredFabricantes.length} fabricantes encontrados
-      </p>
+      {/* Results count and pagination */}
+      <div className="flex justify-between items-center">
+        <p className="neuro-text-tertiary text-sm">
+          {searchTerm
+            ? `${fabricantes.length} resultado${fabricantes.length !== 1 ? 's' : ''} encontrado${fabricantes.length !== 1 ? 's' : ''}`
+            : `Mostrando ${fabricantes.length} de ${pagination?.total || 0} fabricantes`
+          }
+        </p>
+
+        {pagination && !searchTerm && pagination.totalPages > 1 && (
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ← Anterior
+            </button>
+            <span className="neuro-text-secondary text-sm">
+              Página {currentPage} de {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              disabled={currentPage >= pagination.totalPages}
+              className="neuro-button px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Lista de fabricantes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -124,64 +171,54 @@ export default function FabricantesPage() {
           ))
         ) : (
           <AnimatePresence mode="popLayout">
-            {filteredFabricantes.map((fabricante, index) => (
+            {fabricantes.map((fabricante: any, index: number) => (
               <motion.div
-                key={fabricante.id}
+                key={fabricante.fabricante_id || `fabricante-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.1 }}
-                className="card hover:shadow-lg transition-all duration-200 cursor-pointer"
-                onClick={() => handleViewFabricante(fabricante)}
+                transition={{ delay: index * 0.03 }}
               >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <BuildingOfficeIcon className="w-6 h-6 text-blue-600" />
+                <ActionCard
+                  onClick={() => handleViewFabricante(fabricante)}
+                  onEdit={() => handleEditClick(fabricante)}
+                  showActions={false}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <BuildingOfficeIcon className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-lg">
+                            {fabricante.nombre}
+                          </h3>
+                          <p className="text-sm text-gray-500">{fabricante.pais}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-lg">
-                          {fabricante.nombre}
-                        </h3>
-                        <p className="text-sm text-gray-500">{fabricante.pais}</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>Teléfono:</span>
+                        <span className="font-medium">{fabricante.soporte_tel || 'N/A'}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>Website:</span>
+                        <span className="font-medium truncate ml-2">{fabricante.web || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>Teléfono:</span>
-                      <span className="font-medium">{fabricante.soporte_tel || 'N/A'}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>Website:</span>
-                      <span className="font-medium truncate ml-2">{fabricante.web || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(fabricante);
-                      }}
-                      className="flex-1"
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                </div>
+                </ActionCard>
               </motion.div>
             ))}
           </AnimatePresence>
         )}
       </div>
 
-      {!isLoading && filteredFabricantes.length === 0 && (
+      {!isLoading && fabricantes.length === 0 && (
         <div className="text-center py-12">
           <BuildingOfficeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
