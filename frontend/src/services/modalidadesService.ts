@@ -4,6 +4,7 @@ export interface Modalidad {
   modalidad_id: number;
   codigo: string;
   descripcion?: string;
+  prioridad_alta?: boolean;
 }
 
 class ModalidadesService {

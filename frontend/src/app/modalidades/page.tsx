@@ -65,12 +65,14 @@ export default function ModalidadesPage() {
       if (modalType === 'create') {
         await modalidadesService.create({
           codigo: data.codigo,
-          descripcion: data.descripcion
+          descripcion: data.descripcion,
+          prioridad_alta: data.prioridad_alta || false
         });
       } else if (selectedModalidad) {
         await modalidadesService.update(parseInt(selectedModalidad.modalidad_id || selectedModalidad.id), {
           codigo: data.codigo,
-          descripcion: data.descripcion
+          descripcion: data.descripcion,
+          prioridad_alta: data.prioridad_alta || false
         });
       }
       handleCloseModal();
@@ -222,8 +224,15 @@ export default function ModalidadesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {modalidad.descripcion || '-'}
+                      <div className="flex items-center space-x-2">
+                        <div className="text-sm text-gray-900">
+                          {modalidad.descripcion || '-'}
+                        </div>
+                        {modalidad.prioridad_alta && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                            🔥 Alta Prioridad
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

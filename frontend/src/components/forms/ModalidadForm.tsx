@@ -17,6 +17,7 @@ const modalidadSchema = z.object({
   descripcion: z.string()
     .max(255, 'La descripción no puede exceder 255 caracteres')
     .optional(),
+  prioridad_alta: z.boolean().default(false),
 });
 
 type ModalidadFormData = z.infer<typeof modalidadSchema>;
@@ -43,10 +44,12 @@ export const ModalidadForm: React.FC<ModalidadFormProps> = ({
     resolver: zodResolver(modalidadSchema),
     defaultValues: modalidad ? {
       codigo: modalidad.codigo,
-      descripcion: modalidad.descripcion || ''
+      descripcion: modalidad.descripcion || '',
+      prioridad_alta: (modalidad as any).prioridad_alta || false
     } : {
       codigo: '',
-      descripcion: ''
+      descripcion: '',
+      prioridad_alta: false
     }
   });
 
@@ -111,6 +114,25 @@ export const ModalidadForm: React.FC<ModalidadFormProps> = ({
               <p className="text-sm text-gray-500 mt-1">
                 Descripción completa de la modalidad (opcional)
               </p>
+            </div>
+
+            <div>
+              <div className="flex items-center space-x-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <input
+                  {...register('prioridad_alta')}
+                  type="checkbox"
+                  id="prioridad_alta"
+                  className="w-5 h-5 text-amber-600 bg-white border-gray-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
+                />
+                <label htmlFor="prioridad_alta" className="flex-1 cursor-pointer">
+                  <span className="text-sm font-semibold text-gray-900 block">
+                    🔥 Modalidad de Alta Prioridad
+                  </span>
+                  <span className="text-xs text-gray-600 block mt-1">
+                    Las órdenes con esta modalidad tendrán +50 puntos de prioridad automáticamente
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
