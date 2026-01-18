@@ -195,7 +195,7 @@ export function mapOrderToUI(order: Order): OrderUI {
     titulo: order.falla_reportada || '',
     descripcion: order.falla_reportada || '',
     fechaCreacion: order.fecha_apertura || '',
-    fechaVencimiento: '',
+    fechaVencimiento: (order as any).fecha_vencimiento || '',
     tecnico: '',
     tiempoEstimado: '',
   };

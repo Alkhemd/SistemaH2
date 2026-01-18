@@ -5,6 +5,8 @@ export interface CreateOrdenData {
   cliente_id: number;
   contrato_id?: number;
   prioridad?: string;
+  prioridad_manual?: 'critica' | 'alta' | 'media' | 'baja';
+  fecha_vencimiento?: string | null;
   estado?: string;
   tipo?: string;
   falla_reportada?: string;

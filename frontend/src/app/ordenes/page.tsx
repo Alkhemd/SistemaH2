@@ -80,6 +80,7 @@ export default function OrdenesPage() {
     cliente_id: 0,
     tipo: 'correctivo' as 'correctivo' | 'preventivo' | 'calibracion',
     prioridad: 'normal' as 'critica' | 'alta' | 'normal',
+    prioridad_manual: 'media' as 'critica' | 'alta' | 'media' | 'baja',
     titulo: '',
     descripcion: '',
     tecnico_id: undefined as number | undefined,
@@ -172,6 +173,10 @@ export default function OrdenesPage() {
       showToast.error('Ingresa un título');
       return;
     }
+    if (!formData.fecha_vencimiento) {
+      showToast.error('La fecha de vencimiento es obligatoria');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -180,6 +185,8 @@ export default function OrdenesPage() {
         cliente_id: formData.cliente_id,
         tipo: formData.tipo,
         prioridad: formData.prioridad.charAt(0).toUpperCase() + formData.prioridad.slice(1),
+        prioridad_manual: formData.prioridad_manual,
+        fecha_vencimiento: formData.fecha_vencimiento || null,
         estado: formData.tipo === 'preventivo' ? 'En Proceso' : 'Abierta',
         falla_reportada: formData.descripcion || formData.titulo,
         origen: 'Portal'
@@ -192,6 +199,7 @@ export default function OrdenesPage() {
         cliente_id: 0,
         tipo: 'correctivo',
         prioridad: 'normal',
+        prioridad_manual: 'media',
         titulo: '',
         descripcion: '',
         tecnico_id: undefined,
@@ -264,10 +272,17 @@ export default function OrdenesPage() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusOrder, setStatusOrder] = useState<Order | null>(null);
   const [newStatus, setNewStatus] = useState('abierta');
+  const [justificacion, setJustificacion] = useState('');
+
+  // Estado para historial de orden
+  const [orderHistory, setOrderHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleChangeStatus = (order: Order) => {
     setStatusOrder(order);
     setNewStatus(order.estado);
+    setJustificacion('');
     setIsStatusModalOpen(true);
     setOpenMenuId(null);
   };
@@ -275,9 +290,32 @@ export default function OrdenesPage() {
   const handleStatusSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!statusOrder) return;
+
+    // Validar justificación
+    if (!justificacion.trim()) {
+      showToast.error('La justificación es obligatoria');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await updateOrder(parseInt(statusOrder.id), { estado: newStatus });
+      // Usar el nuevo endpoint de cambiar-estado con justificación
+      const response = await fetch(`http://localhost:3000/api/ordenes/${statusOrder.id}/cambiar-estado`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          estado_nuevo: newStatus,
+          justificacion: justificacion.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al cambiar estado');
+      }
+
       // Manually refresh with current filters to ensure UI sync
       await fetchOrdenes({
         page: currentPage,
@@ -286,10 +324,32 @@ export default function OrdenesPage() {
         prioridad: selectedPrioridad || undefined,
         estado: selectedEstado || undefined,
       });
-      showToast.success('Estado actualizado');
+      showToast.success('Estado actualizado exitosamente');
       setIsStatusModalOpen(false);
-    } catch (error) {
-      showToast.error('Error al cambiar el estado');
+      setJustificacion('');
+    } catch (error: any) {
+      console.error('Error al cambiar estado:', error);
+      showToast.error(error.message || 'Error al cambiar el estado');
+
+      // Función para cargar historial de una orden
+      const fetchOrderHistory = async (orderId: string) => {
+        setIsLoadingHistory(true);
+        try {
+          const response = await fetch(`http://localhost:3000/api/ordenes/${orderId}/historial`);
+          if (!response.ok) {
+            throw new Error('Error al cargar historial');
+          }
+          const result = await response.json();
+          setOrderHistory(result.data || []);
+          setShowHistory(true);
+        } catch (error: any) {
+          console.error('Error loading history:', error);
+          showToast.error('Error al cargar el historial');
+          setOrderHistory([]);
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      };
     } finally {
       setIsLoading(false);
     }
@@ -520,7 +580,8 @@ export default function OrdenesPage() {
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Prioridad</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Estado</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Cliente</th>
-                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Fecha</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Creación</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Vencimiento</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider text-right">Acciones</th>
                 </tr>
               </thead>
@@ -591,6 +652,40 @@ export default function OrdenesPage() {
                           <span>{formatDateTime(order.fechaCreacion).split(',')[1]}</span>
                         </div>
                       </div>
+                    </td>
+
+                    {/* Fecha de Vencimiento */}
+                    <td className="py-4 px-4">
+                      {order.fechaVencimiento ? (
+                        (() => {
+                          const hoy = new Date();
+                          const vencimiento = new Date(order.fechaVencimiento);
+                          const diasRestantes = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+                          const isOverdue = diasRestantes < 0;
+                          const isUrgent = diasRestantes >= 0 && diasRestantes <= 3;
+
+                          return (
+                            <div className="flex flex-col">
+                              <div className={`flex items-center space-x-1 text-sm font-medium ${isOverdue ? 'text-red-600' : isUrgent ? 'text-orange-600' : 'text-[#1D1D1F]'}`}>
+                                <Calendar size={12} className={isOverdue ? 'text-red-500' : isUrgent ? 'text-orange-500' : 'text-[#86868B]'} />
+                                <span>{new Date(order.fechaVencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+                              </div>
+                              <div className={`text-[11px] mt-0.5 ml-4 font-semibold ${isOverdue ? 'text-red-600' : isUrgent ? 'text-orange-600' : 'text-green-600'}`}>
+                                {isOverdue
+                                  ? `⚠️ Vencida hace ${Math.abs(diasRestantes)} días`
+                                  : diasRestantes === 0
+                                    ? '⏰ Vence hoy'
+                                    : diasRestantes === 1
+                                      ? '⏰ Vence mañana'
+                                      : `✓ ${diasRestantes} días restantes`
+                                }
+                              </div>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-gray-400 text-sm">Sin fecha</span>
+                      )}
                     </td>
 
                     <td className="py-4 px-4 relative">
@@ -890,6 +985,27 @@ export default function OrdenesPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-[#6E6E73] mb-2">
+                        Prioridad Manual *
+                      </label>
+                      <select
+                        name="prioridad_manual"
+                        value={formData.prioridad_manual}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        required
+                      >
+                        <option value="critica">Crítica</option>
+                        <option value="alta">Alta</option>
+                        <option value="media">Media</option>
+                        <option value="baja">Baja</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Se usa para calcular la prioridad automática
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#6E6E73] mb-2">
                         Técnico
                       </label>
                       <select
@@ -911,15 +1027,23 @@ export default function OrdenesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-[#6E6E73] mb-2">
-                        Fecha de Vencimiento
+                        Fecha de Vencimiento *
                       </label>
                       <input
                         type="date"
                         name="fecha_vencimiento"
                         value={formData.fecha_vencimiento}
                         onChange={handleInputChange}
+                        min={new Date().toISOString().split('T')[0]}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        required
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Fecha límite para completar la orden
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Afecta el cálculo de prioridad automática
+                      </p>
                     </div>
 
                     <div>
@@ -1139,6 +1263,16 @@ export default function OrdenesPage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => fetchOrderHistory(selectedOrder.id)}
+                  disabled={isLoadingHistory}
+                  className="px-6 py-2.5 bg-white border border-gray-300 text-[#1D1D1F] font-medium rounded-xl hover:bg-gray-50 transition-all flex items-center space-x-2 disabled:opacity-50"
+                >
+                  <FileText size={16} />
+                  <span>{isLoadingHistory ? 'Cargando...' : 'Ver Historial'}</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setIsDetailsModalOpen(false)}
                   className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
                 >
@@ -1232,6 +1366,23 @@ export default function OrdenesPage() {
                   <option value="Cerrada">Cerrada</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#6E6E73] mb-2">
+                  Justificación *
+                </label>
+                <textarea
+                  value={justificacion}
+                  onChange={(e) => setJustificacion(e.target.value)}
+                  rows={4}
+                  placeholder="Explica el motivo del cambio de estado..."
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  La justificación se guardará en el historial de la orden
+                </p>
+              </div>
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
@@ -1246,6 +1397,114 @@ export default function OrdenesPage() {
                   className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg disabled:opacity-50"
                 >
                   {isLoading ? 'Guardando...' : 'Guardar Estado'}
+
+                  {/* Modal de Historial */}
+                  <AnimatePresence>
+                    {showHistory && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowHistory(false)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.9, opacity: 0 }}
+                          transition={{ type: "spring", duration: 0.5 }}
+                          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                              <h2 className="text-2xl font-bold text-[#1D1D1F] flex items-center space-x-2">
+                                <FileText size={24} className="text-[#0071E3]" />
+                                <span>Historial de Cambios</span>
+                              </h2>
+                              <button
+                                onClick={() => setShowHistory(false)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                <X size={24} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="p-6">
+                            {orderHistory.length === 0 ? (
+                              <div className="text-center py-12">
+                                <FileText size={48} className="mx-auto text-gray-300 mb-4" />
+                                <p className="text-gray-500">No hay cambios registrados para esta orden</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                {orderHistory.map((item, index) => (
+                                  <motion.div
+                                    key={item.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="relative pl-8 pb-8 border-l-2 border-gray-200 last:border-l-0 last:pb-0"
+                                  >
+                                    {/* Timeline dot */}
+                                    <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-white shadow-md"></div>
+
+                                    <div className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow">
+                                      {/* Header */}
+                                      <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center space-x-2">
+                                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-100 text-red-700">
+                                            {item.estado_anterior || 'N/A'}
+                                          </span>
+                                          <span className="text-gray-400">→</span>
+                                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-100 text-green-700">
+                                            {item.estado_nuevo}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 flex items-center space-x-1">
+                                          <Clock size={12} />
+                                          <span>{new Date(item.created_at).toLocaleString('es-MX', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Justification */}
+                                      <div className="mb-3">
+                                        <p className="text-sm text-gray-700 italic">
+                                          "{item.justificacion}"
+                                        </p>
+                                      </div>
+
+                                      {/* User */}
+                                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                        <User size={14} />
+                                        <span>Por: {item.usuario}</span>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-2xl flex justify-end">
+                            <button
+                              onClick={() => setShowHistory(false)}
+                              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg"
+                            >
+                              Cerrar
+                            </button>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </button>
               </div>
             </form>
