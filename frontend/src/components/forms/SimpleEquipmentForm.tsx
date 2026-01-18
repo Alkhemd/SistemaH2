@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { uploadImage } from '@/lib/storage';
+import { uploadImage, deleteImage } from '@/lib/storage';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Schema simplificado para el formulario
@@ -52,6 +52,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
   const [modalidades, setModalidades] = useState<CatalogOption[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     clientesService.getAllForDropdown().then(({ data }) => setClientes(data || []));
@@ -62,6 +63,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -107,9 +109,36 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
     }
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setPreviewUrl(null);
+  const removeImage = async () => {
+    if (isDeleting) return;
+
+    // Si es un archivo local (no subido aún), solo limpiamos el estado
+    if (imageFile) {
+      setImageFile(null);
+      setPreviewUrl(null);
+      return;
+    }
+
+    // Si es una imagen existente en el storage
+    if (previewUrl && (previewUrl.startsWith('http') || previewUrl.startsWith('/'))) {
+      try {
+        setIsDeleting(true);
+        const success = await deleteImage(previewUrl);
+        if (success) {
+          setPreviewUrl(null);
+          setValue('foto_url', ''); // Actualizamos el formulario para que sepa que no hay imagen
+        } else {
+          console.error('No se pudo eliminar la imagen');
+        }
+      } catch (error) {
+        console.error('Error al eliminar imagen:', error);
+      } finally {
+        setIsDeleting(false);
+      }
+    } else {
+      // Fallback por si acaso
+      setPreviewUrl(null);
+    }
   };
 
   const handleFormSubmit = async (data: EquipmentFormData) => {
@@ -124,6 +153,8 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
       } else if (previewUrl && (previewUrl.startsWith('http') || previewUrl.startsWith('/'))) {
         // Keep existing URL if not changed
         finalData.foto_url = previewUrl;
+      } else {
+        finalData.foto_url = '';
       }
 
       await onSubmit(finalData);
