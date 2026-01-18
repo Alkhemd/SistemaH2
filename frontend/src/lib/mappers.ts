@@ -62,6 +62,7 @@ export function mapEquipmentToUI(equipment: any): EquipmentUI {
     fechaInstalacion: equipment.fecha_instalacion || '',
     ultimaCalibacion: equipment.ultima_calibracion || '',
     proximaCalibacion: equipment.proxima_calibracion || '',
+    fotoUrl: equipment.foto_url || '',
   };
 }
 
@@ -77,6 +78,7 @@ export function mapEquipmentToAPI(equipment: Partial<EquipmentUI> | Omit<Equipme
     fecha_instalacion: equipment.fechaInstalacion,
     ultima_calibracion: equipment.ultimaCalibacion,
     proxima_calibracion: equipment.proximaCalibacion,
+    foto_url: equipment.fotoUrl || (equipment as any).foto_url,
     // Otros campos opcionales pueden agregarse aquí si se usan en el formulario
   } as any;
 }

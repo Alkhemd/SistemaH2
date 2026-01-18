@@ -17,6 +17,7 @@ export interface Equipo {
   garantia_hasta?: string;
   fabricante?: { nombre: string };
   modalidad?: { descripcion: string };
+  foto_url?: string;
 }
 
 class EquiposService {

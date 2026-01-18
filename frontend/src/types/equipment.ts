@@ -17,6 +17,7 @@ export interface EquipmentUI {
   fechaInstalacion: string;
   ultimaCalibacion: string;
   proximaCalibacion: string;
+  fotoUrl?: string; // foto_url from backend
 }
 
 export interface ClientUI {
@@ -76,6 +77,7 @@ export const mapEquipmentToUI = (equipment: Equipment): EquipmentUI => {
     fechaInstalacion: equipment.fecha_instalacion || equipment.fechaInstalacion || '',
     ultimaCalibacion: (equipment as any).ultima_calibracion || equipment.ultimaCalibacion || '',
     proximaCalibacion: (equipment as any).proxima_calibracion || equipment.proximaCalibacion || '',
+    fotoUrl: equipment.foto_url || '',
   };
 };
 
@@ -144,6 +146,7 @@ export const mapUIToEquipment = (equipmentUI: Partial<EquipmentUI>, clienteId?: 
   estado_equipo: mapEstadoEquipoToBackend(equipmentUI.estado),
   ubicacion: equipmentUI.ubicacion,
   fecha_instalacion: equipmentUI.fechaInstalacion,
+  foto_url: equipmentUI.fotoUrl,
 });
 
 export const mapUIToClient = (clientUI: Partial<ClientUI>): Omit<Client, 'cliente_id'> => ({

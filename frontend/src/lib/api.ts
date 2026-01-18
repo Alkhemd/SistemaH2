@@ -81,6 +81,7 @@ export interface Equipment {
   garantia_hasta?: string;
   ultimaCalibacion?: string; // Para compatibilidad
   proximaCalibacion?: string; // Para compatibilidad
+  foto_url?: string;
   // Relaciones populadas
   cliente?: Client;
   modalidad?: Modalidad;

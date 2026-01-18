@@ -12,6 +12,8 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { uploadImage } from '@/lib/storage';
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 // Schema simplificado para el formulario
 const equipmentSchema = z.object({
@@ -25,6 +27,7 @@ const equipmentSchema = z.object({
   fechaInstalacion: z.string().optional(),
   ultimaCalibacion: z.string().optional(),
   proximaCalibacion: z.string().optional(),
+  foto_url: z.string().optional(),
 });
 
 type EquipmentFormData = z.infer<typeof equipmentSchema>;
@@ -47,6 +50,8 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
   const [clientes, setClientes] = useState<CatalogOption[]>([]);
   const [fabricantes, setFabricantes] = useState<CatalogOption[]>([]);
   const [modalidades, setModalidades] = useState<CatalogOption[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     clientesService.getAllForDropdown().then(({ data }) => setClientes(data || []));
@@ -71,6 +76,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
       fechaInstalacion: equipment.fechaInstalacion || new Date().toISOString().split('T')[0],
       ultimaCalibacion: equipment.ultimaCalibacion || new Date().toISOString().split('T')[0],
       proximaCalibacion: equipment.proximaCalibacion || new Date().toISOString().split('T')[0],
+      foto_url: equipment.foto_url || '',
     } : {
       modelo: '',
       numeroSerie: '',
@@ -82,12 +88,45 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
       fechaInstalacion: new Date().toISOString().split('T')[0],
       ultimaCalibacion: new Date().toISOString().split('T')[0],
       proximaCalibacion: new Date().toISOString().split('T')[0],
+      foto_url: '',
     }
   });
 
+  useEffect(() => {
+    if (equipment?.fotoUrl || equipment?.foto_url) {
+      setPreviewUrl(equipment.fotoUrl || equipment.foto_url);
+    }
+  }, [equipment]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setPreviewUrl(null);
+  };
+
   const handleFormSubmit = async (data: EquipmentFormData) => {
     try {
-      await onSubmit(data);
+      let finalData = { ...data };
+
+      if (imageFile) {
+        const url = await uploadImage(imageFile);
+        if (url) {
+          finalData.foto_url = url;
+        }
+      } else if (previewUrl && (previewUrl.startsWith('http') || previewUrl.startsWith('/'))) {
+        // Keep existing URL if not changed
+        finalData.foto_url = previewUrl;
+      }
+
+      await onSubmit(finalData);
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -104,6 +143,35 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
           <p className="text-sm text-gray-600 mt-1">
             Ingresa los datos del nuevo equipo médico
           </p>
+        </div>
+
+
+        {/* Image Upload Section */}
+        <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors bg-gray-50">
+          {previewUrl ? (
+            <div className="relative w-full max-w-xs aspect-video bg-gray-100 rounded-lg overflow-hidden shadow-sm">
+              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center py-6">
+              <PhotoIcon className="w-12 h-12 text-gray-400 mb-2" />
+              <span className="text-sm font-medium text-gray-600">Subir imagen del equipo</span>
+              <span className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP hasta 5MB</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </label>
+          )}
         </div>
 
         {/* Form Fields */}

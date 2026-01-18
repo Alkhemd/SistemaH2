@@ -216,34 +216,54 @@ export default function EquiposPage() {
               onEdit={() => handleEditEquipment(equipment)}
               onDelete={() => handleDeleteEquipment(equipment.id)}
             >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {equipment.modelo}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {equipment.fabricante}
+              <div className="p-4 flex gap-5">
+                {/* Left Side: Image */}
+                <div className="flex-shrink-0 w-32 h-32 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100">
+                  {equipment.fotoUrl ? (
+                    <img src={equipment.fotoUrl} alt={equipment.modelo} className="w-full h-full object-cover" />
+                  ) : (
+                    <CubeIcon className="w-12 h-12 text-blue-200" />
+                  )}
+                </div>
+
+                {/* Right Side: Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold text-gray-900 truncate pr-2" title={equipment.modelo}>
+                        {equipment.modelo}
+                      </h3>
+                      <p className="text-sm text-blue-600 font-medium truncate" title={equipment.fabricante}>
+                        {equipment.fabricante}
+                      </p>
+                    </div>
+                    <span className={`
+                      flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold
+                      ${equipment.estado === 'operativo' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                        equipment.estado === 'mantenimiento' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                          'bg-red-100 text-red-800 border border-red-200'}
+                    `}>
+                      {equipment.estado}
+                    </span>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-1 gap-1 text-sm text-gray-600 mt-2">
+                    <p className="truncate" title={equipment.numeroSerie}>
+                      <span className="text-gray-400 text-xs uppercase tracking-wider mr-1">SERIE</span>
+                      {equipment.numeroSerie}
+                    </p>
+                    <p className="truncate" title={equipment.cliente}>
+                      <span className="text-gray-400 text-xs uppercase tracking-wider mr-1">CLIENTE</span>
+                      {equipment.cliente}
+                    </p>
+                    <p className="truncate" title={equipment.ubicacion}>
+                      <span className="text-gray-400 text-xs uppercase tracking-wider mr-1">UBICACIÓN</span>
+                      {equipment.ubicacion}
                     </p>
                   </div>
-                  <span className={`
-                    px-2 py-1 rounded-full text-xs font-medium
-                    ${equipment.estado === 'operativo' ? 'bg-green-100 text-green-800' :
-                      equipment.estado === 'mantenimiento' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'}
-                  `}>
-                    {equipment.estado}
-                  </span>
                 </div>
-
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p><span className="font-medium">Serie:</span> {equipment.numeroSerie}</p>
-                  <p><span className="font-medium">Cliente:</span> {equipment.cliente}</p>
-                  <p><span className="font-medium">Ubicación:</span> {equipment.ubicacion}</p>
-                  <p><span className="font-medium">Modalidad:</span> {equipment.modalidad}</p>
-                </div>
-
-
               </div>
             </ActionCard>
           </motion.div>
@@ -291,8 +311,12 @@ export default function EquiposPage() {
           <div className="p-6 space-y-6">
             {/* Header with Icon */}
             <div className="flex items-center space-x-4 pb-4 border-b border-gray-100">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
-                <CubeIcon className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 overflow-hidden">
+                {selectedEquipment.fotoUrl ? (
+                  <img src={selectedEquipment.fotoUrl} alt={selectedEquipment.modelo} className="w-full h-full object-cover" />
+                ) : (
+                  <CubeIcon className="w-8 h-8 text-blue-600" />
+                )}
               </div>
               <div>
                 <h3 className="text-xl font-bold text-[#1D1D1F]">{selectedEquipment.modelo}</h3>
