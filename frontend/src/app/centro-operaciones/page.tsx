@@ -18,6 +18,7 @@ import {
     Wrench,
     ChevronLeft,
     ChevronRight,
+    Search,
     X,
     FileText,
     MessageSquare,
@@ -111,7 +112,11 @@ export default function CentroOperacionesPage() {
             if (filters.prioridad) params.append('prioridad', filters.prioridad);
             if (filters.search) params.append('search', filters.search);
 
-            const response = await fetch(`http://localhost:3000/api/centro-operaciones/ordenes-activas?${params}`);
+            const url = `http://localhost:3000/api/centro-operaciones/ordenes-activas?${params}`;
+            console.log('🔍 Fetching with URL:', url);
+            console.log('🔍 Filters:', filters);
+
+            const response = await fetch(url);
             const result = await response.json();
 
             if (result.success) {
@@ -323,8 +328,10 @@ export default function CentroOperacionesPage() {
     };
 
     const getDaysUntilDue = (fecha: string) => {
-        const due = new Date(fecha);
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalizar a medianoche
+        const due = new Date(fecha);
+        due.setHours(0, 0, 0, 0); // Normalizar a medianoche
         const diff = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         return diff;
     };
@@ -374,22 +381,33 @@ export default function CentroOperacionesPage() {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
+                {/* Stats Cards - Neumorphic Design */}
                 {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-xl p-6 shadow-md border-l-4 border-blue-500"
+                            className="group"
                         >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Abiertas</p>
-                                    <p className="text-3xl font-bold text-gray-900">
-                                        {stats.ordenes_por_estado['Abierta'] || 0}
-                                    </p>
+                            <div className="neuro-card-soft p-4 relative overflow-hidden hover:scale-[1.02] transition-all duration-300">
+                                {/* Gradient Background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-blue-100/50 to-transparent opacity-60"></div>
+
+                                {/* Content */}
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Abiertas</p>
+                                        <p className="text-4xl font-bold bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent">
+                                            {stats.ordenes_por_estado['Abierta'] || 0}
+                                        </p>
+                                    </div>
+                                    <div className="w-14 h-14 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50">
+                                        <AlertCircle className="text-blue-600" size={28} />
+                                    </div>
                                 </div>
-                                <AlertCircle className="text-blue-500" size={32} />
+
+                                {/* Hover Accent */}
+                                <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </div>
                         </motion.div>
 
@@ -397,16 +415,27 @@ export default function CentroOperacionesPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500"
+                            className="group"
                         >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">En Proceso</p>
-                                    <p className="text-3xl font-bold text-gray-900">
-                                        {stats.ordenes_por_estado['En Proceso'] || 0}
-                                    </p>
+                            <div className="neuro-card-soft p-4 relative overflow-hidden hover:scale-[1.02] transition-all duration-300">
+                                {/* Gradient Background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 via-yellow-100/50 to-transparent opacity-60"></div>
+
+                                {/* Content */}
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">En Proceso</p>
+                                        <p className="text-4xl font-bold bg-gradient-to-br from-yellow-600 to-yellow-400 bg-clip-text text-transparent">
+                                            {stats.ordenes_por_estado['En Proceso'] || 0}
+                                        </p>
+                                    </div>
+                                    <div className="w-14 h-14 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br from-yellow-100 to-yellow-50">
+                                        <Activity className="text-yellow-600" size={28} />
+                                    </div>
                                 </div>
-                                <Activity className="text-yellow-500" size={32} />
+
+                                {/* Hover Accent */}
+                                <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </div>
                         </motion.div>
 
@@ -414,16 +443,27 @@ export default function CentroOperacionesPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="bg-white rounded-xl p-6 shadow-md border-l-4 border-orange-500"
+                            className="group"
                         >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">En Espera</p>
-                                    <p className="text-3xl font-bold text-gray-900">
-                                        {stats.ordenes_por_estado['En Espera'] || 0}
-                                    </p>
+                            <div className="neuro-card-soft p-4 relative overflow-hidden hover:scale-[1.02] transition-all duration-300">
+                                {/* Gradient Background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-orange-100/50 to-transparent opacity-60"></div>
+
+                                {/* Content */}
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">En Espera</p>
+                                        <p className="text-4xl font-bold bg-gradient-to-br from-orange-600 to-orange-400 bg-clip-text text-transparent">
+                                            {stats.ordenes_por_estado['En Espera'] || 0}
+                                        </p>
+                                    </div>
+                                    <div className="w-14 h-14 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50">
+                                        <Pause className="text-orange-600" size={28} />
+                                    </div>
                                 </div>
-                                <Pause className="text-orange-500" size={32} />
+
+                                {/* Hover Accent */}
+                                <div className="absolute inset-0 bg-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </div>
                         </motion.div>
 
@@ -431,42 +471,98 @@ export default function CentroOperacionesPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="bg-white rounded-xl p-6 shadow-md border-l-4 border-green-500"
+                            className="group"
                         >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600">Total Activas</p>
-                                    <p className="text-3xl font-bold text-gray-900">
-                                        {pagination.total}
-                                    </p>
+                            <div className="neuro-card-soft p-4 relative overflow-hidden hover:scale-[1.02] transition-all duration-300">
+                                {/* Gradient Background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-green-100/50 to-transparent opacity-60"></div>
+
+                                {/* Content */}
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Total Activas</p>
+                                        <p className="text-4xl font-bold bg-gradient-to-br from-green-600 to-green-400 bg-clip-text text-transparent">
+                                            {pagination.total}
+                                        </p>
+                                    </div>
+                                    <div className="w-14 h-14 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50">
+                                        <CheckCircle className="text-green-600" size={28} />
+                                    </div>
                                 </div>
-                                <CheckCircle className="text-green-500" size={32} />
+
+                                {/* Hover Accent */}
+                                <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </div>
                         </motion.div>
                     </div>
                 )}
             </div>
 
-            {/* Filters */}
-            <div className="bg-white rounded-xl p-4 shadow-md mb-6">
-                <div className="flex items-center space-x-4">
-                    <Filter className="text-gray-400" size={20} />
+            {/* Alerta de Órdenes Vencidas */}
+            {ordenes.some(orden => orden.fecha_vencimiento && getDaysUntilDue(orden.fecha_vencimiento) < 0) && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-600 rounded-xl p-4 shadow-lg"
+                >
+                    <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                            <AlertTriangle className="text-red-600 animate-pulse" size={28} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-red-900">
+                                ⚠️ Órdenes Vencidas Detectadas
+                            </h3>
+                            <p className="text-red-700 text-sm mt-1">
+                                Hay <span className="font-bold">
+                                    {ordenes.filter(orden => orden.fecha_vencimiento && getDaysUntilDue(orden.fecha_vencimiento) < 0).length}
+                                </span> orden(es) que ya vencieron. Se requiere atención inmediata.
+                            </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <div className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-lg animate-pulse">
+                                URGENTE
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
-                    <select
-                        value={filters.estado}
-                        onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
-                        className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                        <option value="">Todos los estados</option>
-                        <option value="Abierta">Abierta</option>
-                        <option value="En Proceso">En Proceso</option>
-                        <option value="En Espera">En Espera</option>
-                    </select>
+            {/* Filters - Vertical Layout */}
+            <div className="neuro-card-soft p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <Filter className="text-gray-500" size={20} />
+                        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Filtros</h3>
+                    </div>
+                    {(filters.estado || filters.prioridad || filters.search) && (
+                        <button
+                            onClick={() => setFilters({ estado: '', prioridad: '', search: '' })}
+                            className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                        >
+                            Limpiar filtros
+                        </button>
+                    )}
+                </div>
 
+                <div className="space-y-3">
+                    {/* Search Input */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Buscar órdenes..."
+                            value={filters.search}
+                            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                            className="w-full px-4 py-3 neuro-concave bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm placeholder:text-gray-400"
+                        />
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    </div>
+
+                    {/* Priority Filter */}
                     <select
                         value={filters.prioridad}
                         onChange={(e) => setFilters({ ...filters, prioridad: e.target.value })}
-                        className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 neuro-concave bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm appearance-none cursor-pointer"
                     >
                         <option value="">Todas las prioridades</option>
                         <option value="critica">Crítica</option>
@@ -475,22 +571,24 @@ export default function CentroOperacionesPage() {
                         <option value="baja">Baja</option>
                     </select>
 
-                    <input
-                        type="text"
-                        placeholder="Buscar por ID de orden..."
-                        value={filters.search}
-                        onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                    {/* Status Filter */}
+                    <select
+                        value={filters.estado}
+                        onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
+                        className="w-full px-4 py-3 neuro-concave bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm appearance-none cursor-pointer"
+                    >
+                        <option value="">Todos los estados</option>
+                        <option value="Abierta">Abierta</option>
+                        <option value="En Proceso">En Proceso</option>
+                        <option value="En Espera">En Espera</option>
+                    </select>
 
-                    {(filters.estado || filters.prioridad || filters.search) && (
-                        <button
-                            onClick={() => setFilters({ estado: '', prioridad: '', search: '' })}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            Limpiar
-                        </button>
-                    )}
+                    {/* Optional: Add Type Filter if needed */}
+                    {/* <select
+                        className="w-full px-4 py-3 neuro-concave bg-gray-50/50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm appearance-none cursor-pointer"
+                    >
+                        <option value="">Todos los tipos</option>
+                    </select> */}
                 </div>
             </div>
 
@@ -569,15 +667,38 @@ export default function CentroOperacionesPage() {
                                                     </div>
 
                                                     {daysUntilDue !== null && (
-                                                        <div className={`flex items-center space-x-2 px-2 py-1 rounded-lg ${daysUntilDue <= 0 ? 'bg-red-100' : daysUntilDue <= 3 ? 'bg-orange-100' : 'bg-green-100'}`}>
-                                                            <Calendar size={14} className={daysUntilDue <= 0 ? 'text-red-600' : daysUntilDue <= 3 ? 'text-orange-600' : 'text-green-600'} />
-                                                            <span className={`font-semibold ${daysUntilDue <= 0 ? 'text-red-700' : daysUntilDue <= 3 ? 'text-orange-700' : 'text-green-700'}`}>
-                                                                {daysUntilDue < 0
-                                                                    ? `⚠️ Vencida hace ${Math.abs(daysUntilDue)} días`
+                                                        <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg font-semibold ${daysUntilDue < 0
+                                                                ? 'bg-red-100 border-2 border-red-500 animate-pulse'
+                                                                : daysUntilDue === 0
+                                                                    ? 'bg-red-50 border-2 border-red-400'
+                                                                    : daysUntilDue <= 3
+                                                                        ? 'bg-orange-100'
+                                                                        : 'bg-green-100'
+                                                            }`}>
+                                                            <Calendar size={16} className={
+                                                                daysUntilDue < 0
+                                                                    ? 'text-red-700'
                                                                     : daysUntilDue === 0
-                                                                        ? '⏰ Vence hoy'
+                                                                        ? 'text-red-600'
+                                                                        : daysUntilDue <= 3
+                                                                            ? 'text-orange-600'
+                                                                            : 'text-green-600'
+                                                            } />
+                                                            <span className={
+                                                                daysUntilDue < 0
+                                                                    ? 'text-red-900 font-bold'
+                                                                    : daysUntilDue === 0
+                                                                        ? 'text-red-800 font-bold'
+                                                                        : daysUntilDue <= 3
+                                                                            ? 'text-orange-700'
+                                                                            : 'text-green-700'
+                                                            }>
+                                                                {daysUntilDue < 0
+                                                                    ? `🚨 VENCIDA hace ${Math.abs(daysUntilDue)} día${Math.abs(daysUntilDue) !== 1 ? 's' : ''}`
+                                                                    : daysUntilDue === 0
+                                                                        ? '🔴 VENCE HOY'
                                                                         : daysUntilDue === 1
-                                                                            ? '⏰ Vence mañana'
+                                                                            ? '⚠️ Vence mañana'
                                                                             : `✓ ${daysUntilDue} días restantes`
                                                                 }
                                                             </span>

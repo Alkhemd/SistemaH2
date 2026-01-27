@@ -35,6 +35,7 @@ class OrdenesService {
     search?: string;
     prioridad?: string;
     estado?: string;
+    clienteId?: number;
   }): Promise<{ data: Orden[] | null; pagination?: any; error: any }> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -42,6 +43,7 @@ class OrdenesService {
     if (params?.search) queryParams.append('search', params.search);
     if (params?.prioridad) queryParams.append('prioridad', params.prioridad);
     if (params?.estado) queryParams.append('estado', params.estado);
+    if (params?.clienteId) queryParams.append('cliente_id', params.clienteId.toString());
 
     const endpoint = queryParams.toString() ? `/ordenes?${queryParams}` : '/ordenes';
     return backendClient.get<Orden[]>(endpoint);

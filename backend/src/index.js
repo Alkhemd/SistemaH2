@@ -13,6 +13,7 @@ const fabricantesRoutes = require('./routes/fabricantes');
 const dashboardRoutes = require('./routes/dashboard');
 const actividadesRoutes = require('./routes/actividades');
 const centroOperacionesRoutes = require('./routes/centroOperaciones');
+const storageRoutes = require('./routes/storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,7 @@ app.use('/api/fabricantes', fabricantesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/actividades', actividadesRoutes);
 app.use('/api/centro-operaciones', centroOperacionesRoutes);
+app.use('/api/storage', storageRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

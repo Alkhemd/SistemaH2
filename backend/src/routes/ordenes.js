@@ -11,6 +11,7 @@ router.get('/', async (req, res) => {
         const search = req.query.search || '';
         const prioridad = req.query.prioridad || '';
         const estado = req.query.estado || '';
+        const clienteId = req.query.cliente_id || '';
         const offset = (page - 1) * limit;
 
         let query = supabase
@@ -25,6 +26,11 @@ router.get('/', async (req, res) => {
                 ),
                 cliente:cliente_id(cliente_id, nombre)
             `, { count: 'exact' });
+
+        // Apply cliente_id filter (exact match)
+        if (clienteId.trim()) {
+            query = query.eq('cliente_id', parseInt(clienteId));
+        }
 
         // Apply prioridad filter (case-insensitive exact match)
         if (prioridad.trim()) {
@@ -270,10 +276,11 @@ router.post('/:id/cambiar-estado', async (req, res) => {
 
         const estado_anterior = ordenActual.estado;
 
+
         // Preparar datos de actualización
         const updateData = { estado: estado_nuevo };
 
-        // Si el estado nuevo es cerrado/completado, establecer fecha_cierre
+        // Si el estado nuevo es cerrado/completado/cancelado, establecer fecha_cierre
         const estadosCerrados = ['cerrada', 'completada', 'cancelada'];
         if (estadosCerrados.includes(estado_nuevo.toLowerCase())) {
             updateData.fecha_cierre = new Date().toISOString();

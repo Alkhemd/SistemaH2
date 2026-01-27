@@ -1,25 +1,27 @@
-import { supabase } from '@/lib/supabase';
+// SECURE: All storage operations go through backend API
+// Backend handles Supabase credentials securely
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export const uploadImage = async (file: File, bucket: string = 'imagenes_equipo'): Promise<string | null> => {
     try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('bucket', bucket);
 
-        const { error: uploadError } = await supabase.storage
-            .from(bucket)
-            .upload(filePath, file);
+        const response = await fetch(`${API_URL}/storage/upload`, {
+            method: 'POST',
+            body: formData,
+        });
 
-        if (uploadError) {
-            console.error('Error uploading image:', uploadError);
-            throw uploadError;
+        if (!response.ok) {
+            const error = await response.json();
+            console.error('Error uploading image:', error);
+            return null;
         }
 
-        const { data } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(filePath);
-
-        return data.publicUrl;
+        const result = await response.json();
+        return result.url;
     } catch (error) {
         console.error('Error in uploadImage:', error);
         return null;
@@ -28,21 +30,16 @@ export const uploadImage = async (file: File, bucket: string = 'imagenes_equipo'
 
 export const deleteImage = async (imageUrl: string, bucket: string = 'imagenes_equipo'): Promise<boolean> => {
     try {
-        // Extraer el path del archivo de la URL pública
-        // Formato típico: .../storage/v1/object/public/{bucket}/{fileName}
-        const urlParts = imageUrl.split(`/${bucket}/`);
-        if (urlParts.length < 2) {
-            console.error('Invalid image URL format');
-            return false;
-        }
+        const response = await fetch(`${API_URL}/storage/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl, bucket }),
+        });
 
-        const filePath = urlParts[1]; // El resto es el path (ej: "archivo.jpg")
-
-        const { error } = await supabase.storage
-            .from(bucket)
-            .remove([filePath]);
-
-        if (error) {
+        if (!response.ok) {
+            const error = await response.json();
             console.error('Error deleting image:', error);
             return false;
         }

@@ -107,14 +107,36 @@ function calcularPrioridad(orden) {
         case 'baja': prioridad += 25; break;
     }
 
-    // Por fecha de vencimiento (si existe y está próxima)
+    // Por fecha de vencimiento (fórmula mejorada con cálculo exacto)
     if (orden.fecha_vencimiento) {
         const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0); // Normalizar a medianoche
         const vencimiento = new Date(orden.fecha_vencimiento);
+        vencimiento.setHours(0, 0, 0, 0);
         const diasRestantes = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
-        if (diasRestantes <= 0) prioridad += 75; // Vencida
-        else if (diasRestantes <= 3) prioridad += 50;
-        else if (diasRestantes <= 7) prioridad += 25;
+
+        if (diasRestantes < 0) {
+            // Vencida - URGENTÍSIMO
+            // Mientras más días vencida, MÁS prioridad
+            prioridad += 150 + Math.abs(diasRestantes) * 10;
+        } else if (diasRestantes === 0) {
+            // Vence HOY - CRÍTICO
+            prioridad += 120;
+        } else if (diasRestantes === 1) {
+            // Vence MAÑANA - MUY URGENTE
+            prioridad += 100;
+        } else if (diasRestantes <= 3) {
+            // Vence en 2-3 días - URGENTE
+            // Inversamente proporcional: menos días = más prioridad
+            prioridad += 80 - (diasRestantes - 1) * 10;
+        } else if (diasRestantes <= 7) {
+            // Vence en 4-7 días - IMPORTANTE
+            prioridad += 50 - (diasRestantes - 3) * 5;
+        } else if (diasRestantes <= 14) {
+            // Vence en 8-14 días - ATENCIÓN
+            prioridad += 20 - (diasRestantes - 7) * 2;
+        }
+        // Si vence en más de 14 días, no suma puntos extra
     }
 
     // Por modalidad de alta prioridad (a través del equipo)
