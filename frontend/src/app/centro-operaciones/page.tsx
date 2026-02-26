@@ -116,7 +116,7 @@ export default function CentroOperacionesPage() {
             console.log('🔍 Fetching with URL:', url);
             console.log('🔍 Filters:', filters);
 
-            const response = await fetch(url);
+            const response = await fetch(url, { cache: 'no-store' });
             const result = await response.json();
 
             if (result.success) {
@@ -139,7 +139,7 @@ export default function CentroOperacionesPage() {
     // Fetch stats
     const fetchStats = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/centro-operaciones/estadisticas');
+            const response = await fetch('http://localhost:3000/api/centro-operaciones/estadisticas', { cache: 'no-store' });
             const result = await response.json();
 
             if (result.data) {
@@ -153,7 +153,7 @@ export default function CentroOperacionesPage() {
     // Fetch order history
     const fetchOrderHistory = async (orderId: string) => {
         try {
-            const response = await fetch(`http://localhost:3000/api/ordenes/${orderId}/historial`);
+            const response = await fetch(`http://localhost:3000/api/ordenes/${orderId}/historial`, { cache: 'no-store' });
             const result = await response.json();
             if (result.data) {
                 setOrderHistory(result.data);
@@ -666,12 +666,12 @@ export default function CentroOperacionesPage() {
 
                                                     {daysUntilDue !== null && (
                                                         <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold text-[11px] ${daysUntilDue < 0
-                                                                ? 'bg-red-100 border border-red-400 animate-pulse'
-                                                                : daysUntilDue === 0
-                                                                    ? 'bg-red-50 border border-red-300'
-                                                                    : daysUntilDue <= 3
-                                                                        ? 'bg-orange-100'
-                                                                        : 'bg-green-100'
+                                                            ? 'bg-red-100 border border-red-400 animate-pulse'
+                                                            : daysUntilDue === 0
+                                                                ? 'bg-red-50 border border-red-300'
+                                                                : daysUntilDue <= 3
+                                                                    ? 'bg-orange-100'
+                                                                    : 'bg-green-100'
                                                             }`}>
                                                             <Calendar size={11} className={
                                                                 daysUntilDue < 0 ? 'text-red-700'

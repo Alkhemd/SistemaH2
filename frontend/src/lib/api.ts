@@ -137,6 +137,7 @@ export interface Order {
   fechaCreacion?: string;
   fechaVencimiento?: string;
   tecnico?: string;
+  tecnico_id?: number;
   tiempoEstimado?: string;
 }
 

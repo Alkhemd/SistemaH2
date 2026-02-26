@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { dashboardService } from '@/services/dashboardService';
+import { dashboardService, SummaryStats, TrendData, TechnicianWorkload } from '@/services/dashboardService';
 import dynamic from 'next/dynamic';
 import {
   CubeIcon,
@@ -11,60 +11,100 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { showToast } from '@/components/ui/Toast';
+import SparklineCard from '@/components/dashboard/SparklineCard';
 
 // Dynamically import charts to avoid SSR issues
 const EquipmentStatusChart = dynamic(() => import('@/components/charts/EquipmentStatusChart'), { ssr: false });
 const OrdersPriorityChart = dynamic(() => import('@/components/charts/OrdersPriorityChart'), { ssr: false });
+const TrendsChart = dynamic(() => import('@/components/dashboard/TrendsChart'), { ssr: false });
+const TechnicianWorkloadList = dynamic(() => import('@/components/dashboard/TechnicianWorkloadList'), { ssr: false });
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [isLoadingTrends, setIsLoadingTrends] = useState(false);
+
+  // States
+  const [summaryStats, setSummaryStats] = useState<SummaryStats | null>(null);
+  const [trends, setTrends] = useState<TrendData[]>([]);
+  const [trendsPeriod, setTrendsPeriod] = useState<number>(7);
+  const [workload, setWorkload] = useState<TechnicianWorkload[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any>(null);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setIsLoading(true);
+  const loadTrends = useCallback(async (days: number) => {
+    setIsLoadingTrends(true);
+    try {
+      const response = await dashboardService.getTrends(days);
+      if (!response.error) {
+        setTrends(response.data || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingTrends(false);
+    }
+  }, []);
 
-        // Hacer las 3 peticiones en PARALELO
-        const [statsResponse, activityResponse, chartsResponse] = await Promise.all([
-          dashboardService.getEstadisticas(),
+  const handlePeriodChange = (days: number) => {
+    setTrendsPeriod(days);
+    loadTrends(days);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboardData = async (showLoading = true) => {
+      try {
+        if (showLoading) setIsLoading(true);
+
+        const [
+          summaryResponse,
+          activityResponse,
+          chartsResponse,
+          trendsResponse,
+          workloadResponse
+        ] = await Promise.all([
+          dashboardService.getSummaryStats(),
           dashboardService.getActividadReciente(),
-          dashboardService.getChartData()
+          dashboardService.getChartData(),
+          dashboardService.getTrends(trendsPeriod),
+          dashboardService.getTechnicianWorkload()
         ]);
 
-        // Procesar estadísticas
-        if (statsResponse.error) {
-          throw new Error(statsResponse.error.message);
-        }
-        setStats(statsResponse.data);
+        if (!isMounted) return;
 
-        // Procesar actividad reciente
-        if (!activityResponse.error) {
-          setRecentActivity(activityResponse.data || []);
-        }
+        if (summaryResponse.error) throw new Error(summaryResponse.error.message);
+        setSummaryStats(summaryResponse.data);
 
-        // Procesar datos de gráficas
-        if (!chartsResponse.error) {
-          setChartData(chartsResponse.data);
-        }
+        if (!activityResponse.error) setRecentActivity(activityResponse.data || []);
+        if (!chartsResponse.error) setChartData(chartsResponse.data);
+        if (!trendsResponse.error) setTrends(trendsResponse.data || []);
+        if (!workloadResponse.error) setWorkload(workloadResponse.data || []);
+
       } catch (error) {
+        if (!isMounted) return;
         console.error('Error loading dashboard data:', error);
-        showToast.error('Error al cargar estadísticas del dashboard');
-        setStats({
-          totalEquipments: 0,
-          openOrders: 0,
-          maintenanceEquipments: 0,
-          operativeEquipments: 0,
-        });
+        if (showLoading) showToast.error('Error al cargar estadísticas del dashboard');
       } finally {
-        setIsLoading(false);
+        if (isMounted && showLoading) {
+          setIsLoading(false);
+        }
       }
     };
 
-    loadDashboardData();
-  }, []);
+    loadDashboardData(true);
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadDashboardData(false);
+      }
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [trendsPeriod]);
 
   if (isLoading) {
     return (
@@ -97,84 +137,66 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
-        {stats ? [
-          {
-            title: 'Total Equipos',
-            value: stats?.totalEquipments?.toString() || '0',
-            icon: CubeIcon,
-            description: 'equipos registrados',
-            gradient: 'from-blue-50 via-blue-100/50 to-transparent',
-            iconBg: 'from-blue-100 to-blue-50',
-            iconColor: 'text-blue-600',
-            valueGradient: 'from-blue-600 to-blue-400',
-            hoverAccent: 'bg-blue-500/5'
-          },
-          {
-            title: 'Órdenes Abiertas',
-            value: stats?.openOrders?.toString() || '0',
-            icon: ExclamationTriangleIcon,
-            description: 'pendientes',
-            gradient: 'from-red-50 via-red-100/50 to-transparent',
-            iconBg: 'from-red-100 to-red-50',
-            iconColor: 'text-red-600',
-            valueGradient: 'from-red-600 to-red-400',
-            hoverAccent: 'bg-red-500/5'
-          },
-          {
-            title: 'En Mantenimiento',
-            value: stats?.maintenanceEquipments?.toString() || '0',
-            icon: ClockIcon,
-            description: 'equipos',
-            gradient: 'from-amber-50 via-amber-100/50 to-transparent',
-            iconBg: 'from-amber-100 to-amber-50',
-            iconColor: 'text-amber-600',
-            valueGradient: 'from-amber-600 to-amber-400',
-            hoverAccent: 'bg-amber-500/5'
-          },
-          {
-            title: 'Operativos',
-            value: stats?.operativeEquipments?.toString() || '0',
-            icon: CheckCircleIcon,
-            description: 'funcionando',
-            gradient: 'from-green-50 via-green-100/50 to-transparent',
-            iconBg: 'from-green-100 to-green-50',
-            iconColor: 'text-green-600',
-            valueGradient: 'from-green-600 to-green-400',
-            hoverAccent: 'bg-green-500/5'
-          }
-        ].map((stat: any, index: number) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="group"
-          >
-            <div className="neuro-card-soft p-4 relative overflow-hidden hover:scale-[1.02] transition-all duration-300">
-              {/* Gradient Background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60`} />
-
-              {/* Content */}
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                    {stat.title}
-                  </p>
-                  <p className={`text-4xl font-bold bg-gradient-to-br ${stat.valueGradient} bg-clip-text text-transparent`}>
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">{stat.description}</p>
-                </div>
-                <div className={`w-14 h-14 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br ${stat.iconBg}`}>
-                  <stat.icon className={`w-7 h-7 ${stat.iconColor}`} />
-                </div>
-              </div>
-
-              {/* Hover Accent */}
-              <div className={`absolute inset-0 ${stat.hoverAccent} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-            </div>
-          </motion.div>
-        )) : (
+        {summaryStats ? (
+          <>
+            <SparklineCard
+              title="Total Equipos"
+              value={summaryStats.totalEquipments?.value || 0}
+              trend={summaryStats.totalEquipments?.trend || []}
+              delta={summaryStats.totalEquipments?.delta || 0}
+              index={0}
+              icon={CubeIcon}
+              description="equipos registrados"
+              gradient="from-blue-50 via-blue-100/50 to-transparent"
+              iconBg="from-blue-100 to-blue-50"
+              iconColor="text-blue-600"
+              valueGradient="from-blue-600 to-blue-400"
+              hoverAccent="bg-blue-500/5"
+            />
+            <SparklineCard
+              title="Órdenes Abiertas"
+              value={summaryStats.openOrders?.value || 0}
+              trend={summaryStats.openOrders?.trend || []}
+              delta={summaryStats.openOrders?.delta || 0}
+              index={1}
+              icon={ExclamationTriangleIcon}
+              description="pendientes"
+              gradient="from-red-50 via-red-100/50 to-transparent"
+              iconBg="from-red-100 to-red-50"
+              iconColor="text-red-600"
+              valueGradient="from-red-600 to-red-400"
+              hoverAccent="bg-red-500/5"
+            />
+            <SparklineCard
+              title="En Mantenimiento"
+              value={summaryStats.maintenanceEquipments?.value || 0}
+              trend={summaryStats.maintenanceEquipments?.trend || []}
+              delta={summaryStats.maintenanceEquipments?.delta || 0}
+              index={2}
+              icon={ClockIcon}
+              description="equipos"
+              gradient="from-amber-50 via-amber-100/50 to-transparent"
+              iconBg="from-amber-100 to-amber-50"
+              iconColor="text-amber-600"
+              valueGradient="from-amber-600 to-amber-400"
+              hoverAccent="bg-amber-500/5"
+            />
+            <SparklineCard
+              title="Operativos"
+              value={summaryStats.operativeEquipments?.value || 0}
+              trend={summaryStats.operativeEquipments?.trend || []}
+              delta={summaryStats.operativeEquipments?.delta || 0}
+              index={3}
+              icon={CheckCircleIcon}
+              description="funcionando"
+              gradient="from-green-50 via-green-100/50 to-transparent"
+              iconBg="from-green-100 to-green-50"
+              iconColor="text-green-600"
+              valueGradient="from-green-600 to-green-400"
+              hoverAccent="bg-green-500/5"
+            />
+          </>
+        ) : (
           <div className="col-span-4 card p-8 text-center">
             <p className="neuro-text-secondary">No se pudieron cargar las estadísticas</p>
           </div>
@@ -182,91 +204,111 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* Charts Grid */}
-      {chartData && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          {/* Equipment Status Chart */}
-          <div className="card">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold neuro-text-primary mb-4">
-                Distribución de Equipos
-              </h2>
-              <EquipmentStatusChart data={chartData.equipmentByStatus || []} />
-            </div>
-          </div>
+      {/* Trends Chart */}
+      <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <TrendsChart
+          data={trends}
+          currentPeriod={trendsPeriod}
+          onPeriodChange={handlePeriodChange}
+        />
+      </div>
 
-          {/* Orders Priority Chart */}
+      {/* Charts & Workload Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+
+        {/* Left Column: Distribution Charts & Recent Activity */}
+        <div className="lg:col-span-2 space-y-6">
+          {chartData && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Equipment Status Chart */}
+              <div className="card">
+                <div className="p-6">
+                  <h2 className="text-xl font-semibold neuro-text-primary mb-4">
+                    Distribución de Equipos
+                  </h2>
+                  <EquipmentStatusChart data={chartData.equipmentByStatus || []} />
+                </div>
+              </div>
+
+              {/* Orders Priority Chart */}
+              <div className="card">
+                <div className="p-6">
+                  <h2 className="text-xl font-semibold neuro-text-primary mb-4">
+                    Órdenes por Prioridad
+                  </h2>
+                  <OrdersPriorityChart data={chartData.ordersByPriority || []} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recent Activity */}
           <div className="card">
             <div className="p-6">
-              <h2 className="text-xl font-semibold neuro-text-primary mb-4">
-                Órdenes por Prioridad
-              </h2>
-              <OrdersPriorityChart data={chartData.ordersByPriority || []} />
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold neuro-text-primary">
+                  Actividad Reciente
+                </h2>
+                <button className="neuro-button px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                  Ver todo
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {recentActivity && recentActivity.length > 0 ? (
+                  recentActivity.map((activity: any, index: number) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center justify-between p-4 neuro-convex-sm hover:neuro-concave-sm rounded-xl transition-all duration-200 cursor-pointer"
+                      style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-3 h-3 rounded-full ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
+                          activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }`} />
+                        <div>
+                          <p className="font-medium neuro-text-primary">
+                            {activity.equipment || 'Equipo sin nombre'}
+                          </p>
+                          <p className="text-sm neuro-text-secondary">
+                            {activity.client || 'Cliente desconocido'} • {activity.description || 'Sin descripción'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-1 hidden sm:block">
+                        <p className="text-sm neuro-text-secondary">
+                          {activity.time || 'Tiempo desconocido'}
+                        </p>
+                        <div className="flex items-center space-x-2 justify-end">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
+                            activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
+                            }`}>
+                            {activity.type || 'Normal'}
+                          </span>
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
+                            activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' :
+                              'text-red-600 bg-red-50'
+                            }`}>
+                            {activity.status?.replace('_', ' ') || 'Pendiente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 neuro-text-secondary">
+                    <p>No hay actividad reciente</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Recent Activity */}
-      <div className="card animate-slide-up" style={{ animationDelay: '0.3s' }}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold neuro-text-primary">
-              Actividad Reciente
-            </h2>
-            <button className="neuro-button px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
-              Ver todo
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {recentActivity && recentActivity.length > 0 ? (
-              recentActivity.map((activity: any, index: number) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between p-4 neuro-convex-sm hover:neuro-concave-sm rounded-xl transition-all duration-200 cursor-pointer"
-                  style={{ animationDelay: `${0.1 + index * 0.1}s` }}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-3 h-3 rounded-full ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
-                      activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`} />
-                    <div>
-                      <p className="font-medium neuro-text-primary">
-                        {activity.equipment || 'Equipo sin nombre'}
-                      </p>
-                      <p className="text-sm neuro-text-secondary">
-                        {activity.client || 'Cliente desconocido'} • {activity.description || 'Sin descripción'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-sm neuro-text-secondary">
-                      {activity.time || 'Tiempo desconocido'}
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
-                        activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
-                        }`}>
-                        {activity.type || 'Normal'}
-                      </span>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
-                        activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' :
-                          'text-red-600 bg-red-50'
-                        }`}>
-                        {activity.status?.replace('_', ' ') || 'Pendiente'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 neuro-text-secondary">
-                <p>No hay actividad reciente</p>
-              </div>
-            )}
-          </div>
+        {/* Right Column: Technician Workload */}
+        <div className="lg:col-span-1">
+          <TechnicianWorkloadList data={workload} />
         </div>
       </div>
     </div>

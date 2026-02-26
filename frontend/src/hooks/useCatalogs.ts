@@ -393,7 +393,7 @@ export const useOrdenes = () => {
       setError(null);
       const { data, pagination: paginationData, error } = await ordenesService.getAll(params);
       if (error) throw error;
-      const mapped = Array.isArray(data) ? data.map(mapOrderToUI) : [];
+      const mapped = Array.isArray(data) ? data.map(mapOrderToUI as any) : [];
       console.log('[fetchOrdenes] Órdenes mapeadas:', mapped.length, 'de', paginationData?.total);
       setOrdenes(mapped);
       if (paginationData) {

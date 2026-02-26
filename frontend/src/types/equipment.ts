@@ -41,6 +41,7 @@ export interface OrderUI {
   id: string;
   equipo_id?: number;
   cliente_id?: number;
+  tecnico_id?: number;
   equipo: {
     modelo: string;
     numeroSerie: string;
@@ -133,6 +134,7 @@ export const mapOrderToUI = (order: Order): OrderUI => ({
   fechaCreacion: order.fecha_apertura || order.fechaCreacion || '',
   fechaVencimiento: order.fechaVencimiento,
   tecnico: order.tecnico,
+  tecnico_id: order.tecnico_id,
   tiempoEstimado: order.tiempoEstimado || '2 horas',
 });
 

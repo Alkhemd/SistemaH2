@@ -24,8 +24,12 @@ class BackendClient {
         try {
             const response = await fetch(`${this.baseUrl}${endpoint}`, {
                 ...options,
+                cache: 'no-store', // Disable both Next.js and browser cache
                 headers: {
                     'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
                     ...options.headers,
                 },
             });

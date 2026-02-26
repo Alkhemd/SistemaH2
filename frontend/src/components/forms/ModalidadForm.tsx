@@ -41,7 +41,7 @@ export const ModalidadForm: React.FC<ModalidadFormProps> = ({
     formState: { errors, isSubmitting },
     reset
   } = useForm<ModalidadFormData>({
-    resolver: zodResolver(modalidadSchema),
+    resolver: zodResolver(modalidadSchema) as any,
     defaultValues: modalidad ? {
       codigo: modalidad.codigo,
       descripcion: modalidad.descripcion || '',
@@ -71,7 +71,7 @@ export const ModalidadForm: React.FC<ModalidadFormProps> = ({
       transition={{ duration: 0.3 }}
       className="form-container"
     >
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6 p-6">
+      <form onSubmit={handleSubmit(onFormSubmit as any)} className="space-y-6 p-6">
         {/* Información General */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">

@@ -64,7 +64,7 @@ export default function OrdersPriorityChart({ data }: OrdersPriorityChartProps) 
                         borderRadius: '8px',
                         padding: '12px'
                     }}
-                    formatter={(value: number, name: string, props: any) => [
+                    formatter={(value: any, name: any, props: any) => [
                         `${value} órdenes (${props.payload.percentage}%)`,
                         'Cantidad'
                     ]}

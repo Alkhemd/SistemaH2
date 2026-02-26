@@ -17,6 +17,7 @@ router.get('/ordenes-activas', async (req, res) => {
             .from('orden_trabajo')
             .select(`
                 *,
+                tecnico:usuario_asignado (tecnico_id, nombre),
                 equipo:equipo_id (
                     equipo_id, 
                     modelo, 
@@ -65,7 +66,7 @@ router.get('/ordenes-activas', async (req, res) => {
             equipo: orden.equipo ? `${orden.equipo.modelo || 'Sin modelo'}` : 'Sin equipo',
             numero_serie: orden.equipo?.numero_serie || 'N/A',
             cliente: orden.cliente?.nombre || 'Sin cliente',
-            tecnico: null, // Campo pendiente - requiere configurar FK en Supabase
+            tecnico: orden.tecnico?.nombre || null,
             fecha_vencimiento: orden.fecha_vencimiento,
             modalidad: orden.equipo?.modalidad?.codigo || 'N/A',
             modalidad_prioridad_alta: orden.equipo?.modalidad?.prioridad_alta || false,

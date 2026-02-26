@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
 const { logActivity, generateTitle, getClientIP } = require('../utils/activityLogger');
+const { dashboardCache } = require('../utils/cache');
 
 // GET equipos by client ID (for cascading dropdowns)
 router.get('/by-client/:clienteId', async (req, res) => {
@@ -134,6 +135,8 @@ router.post('/', async (req, res) => {
             ip_address: getClientIP(req)
         });
 
+        dashboardCache.clear();
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error creating equipo:', error);
@@ -169,6 +172,8 @@ router.put('/:id', async (req, res) => {
             datos_nuevo: data,
             ip_address: getClientIP(req)
         });
+
+        dashboardCache.clear();
 
         res.json({ data, error: null });
     } catch (error) {
@@ -213,6 +218,9 @@ router.delete('/:id', async (req, res) => {
         const { error } = await supabase.from('equipo').delete().eq('equipo_id', id);
 
         if (error) throw error;
+
+        dashboardCache.clear();
+
         res.json({ error: null });
     } catch (error) {
         console.error('Error deleting equipo:', error);

@@ -170,7 +170,7 @@ class ApiClient {
     };
 
     const currentRetry = (config as any).__retryCount || 0;
-    
+
     if (currentRetry >= retryConfig.retries) {
       return false;
     }
@@ -180,7 +180,7 @@ class ApiClient {
     const isServerError = error.response && error.response.status >= 500;
     const isRetryableMethod = ['get', 'head', 'options'].includes(config?.method?.toLowerCase() || '');
 
-    return (isNetworkError || isServerError) && isRetryableMethod;
+    return Boolean((isNetworkError || isServerError) && isRetryableMethod);
   }
 
   /**
@@ -210,10 +210,10 @@ class ApiClient {
    * GET request with retry
    */
   async get<T = any>(url: string, config?: ApiClientConfig): Promise<AxiosResponse<T>> {
-    return this.instance.get<T>(url, {
+    return this.instance.get<T, AxiosResponse<T>>(url, {
       ...config,
       retry: { retries: MAX_RETRIES, ...config?.retry },
-    });
+    } as any);
   }
 
   /**

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
 const { logActivity, generateTitle, getClientIP } = require('../utils/activityLogger');
+const { dashboardCache } = require('../utils/cache');
 
 // GET all ordenes with pagination, search and filters
 router.get('/', async (req, res) => {
@@ -18,6 +19,7 @@ router.get('/', async (req, res) => {
             .from('orden_trabajo')
             .select(`
                 *,
+                tecnico:usuario_asignado(tecnico_id, nombre),
                 equipo:equipo_id(
                     equipo_id,
                     modelo,
@@ -126,6 +128,7 @@ router.post('/', async (req, res) => {
         const dataWithDefaults = {
             ...req.body,
             orden_id: nextId,
+            usuario_asignado: req.body.tecnico_id || req.body.usuario_asignado || null,
             fecha_apertura: req.body.fecha_apertura || new Date().toISOString(),
             estado: req.body.estado || 'Abierta',
             prioridad: req.body.prioridad || 'Normal',
@@ -134,6 +137,8 @@ router.post('/', async (req, res) => {
             origen: req.body.origen || 'Portal'
         };
 
+        delete dataWithDefaults.tecnico_id;
+
         console.log('[POST /ordenes] Datos a insertar:', JSON.stringify(dataWithDefaults, null, 2));
 
         const { data, error } = await supabase
@@ -141,6 +146,7 @@ router.post('/', async (req, res) => {
             .insert([dataWithDefaults])
             .select(`
         *,
+        tecnico:usuario_asignado(tecnico_id, nombre),
         equipo:equipo_id(
           equipo_id,
           modelo,
@@ -164,6 +170,8 @@ router.post('/', async (req, res) => {
             ip_address: getClientIP(req)
         });
 
+        dashboardCache.clear();
+
         res.json({ data, error: null });
     } catch (error) {
         console.error('Error creating orden:', error);
@@ -175,12 +183,20 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const updatePayload = { ...req.body };
+        if (updatePayload.tecnico_id !== undefined) {
+            updatePayload.usuario_asignado = updatePayload.tecnico_id || null;
+            // Optionally remove it to stick cleanly to backend schemas
+            delete updatePayload.tecnico_id;
+        }
+
         const { data, error } = await supabase
             .from('orden_trabajo')
-            .update(req.body)
+            .update(updatePayload)
             .eq('orden_id', id)
             .select(`
         *,
+        tecnico:usuario_asignado(tecnico_id, nombre),
         equipo:equipo_id(
           equipo_id,
           modelo,
@@ -203,6 +219,8 @@ router.put('/:id', async (req, res) => {
             datos_nuevo: data,
             ip_address: getClientIP(req)
         });
+
+        dashboardCache.clear();
 
         res.json({ data, error: null });
     } catch (error) {
@@ -243,6 +261,8 @@ router.delete('/:id', async (req, res) => {
             descripcion: `Se eliminó la orden de trabajo #${id}`,
             ip_address: getClientIP(req)
         });
+
+        dashboardCache.clear();
 
         res.json({ error: null });
     } catch (error) {
@@ -293,6 +313,7 @@ router.post('/:id/cambiar-estado', async (req, res) => {
             .eq('orden_id', id)
             .select(`
                 *,
+                tecnico:usuario_asignado(tecnico_id, nombre),
                 equipo:equipo_id(
                     equipo_id,
                     modelo,
@@ -328,6 +349,8 @@ router.post('/:id/cambiar-estado', async (req, res) => {
             datos_nuevo: ordenActualizada,
             ip_address: getClientIP(req)
         });
+
+        dashboardCache.clear();
 
         res.json({ data: ordenActualizada, error: null });
     } catch (error) {
@@ -415,6 +438,7 @@ router.post('/:id/posponer-vencimiento', async (req, res) => {
             .eq('orden_id', id)
             .select(`
                 *,
+                tecnico:usuario_asignado(tecnico_id, nombre),
                 equipo:equipo_id(
                     equipo_id,
                     modelo,

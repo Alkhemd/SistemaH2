@@ -44,7 +44,6 @@ export default function Sidebar() {
       >
         {/* Botón de cerrar en móvil - Estilo Apple */}
         <button
-          onClick={() => setSidebarOpen(false)}
           className="absolute top-6 right-6 lg:hidden p-2.5 rounded-xl hover:bg-gray-100/80 transition-all duration-200 backdrop-blur-sm"
         >
           <XMarkIcon className="w-5 h-5 text-gray-600" />
@@ -76,39 +75,35 @@ export default function Sidebar() {
                   >
                     <Link
                       href={item.href}
-                      onClick={() => setSidebarOpen(false)}
                       className="relative group block"
                     >
                       {isActive && (
                         <motion.div
                           layoutId="activeIndicator"
                           className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-blue-600 rounded-r-full shadow-sm"
-                          transition={{ 
-                            type: 'spring', 
-                            stiffness: 400, 
+                          transition={{
+                            type: 'spring',
+                            stiffness: 400,
                             damping: 25
                           }}
                         />
                       )}
 
                       <div
-                        className={`relative flex items-center justify-center flex-col px-6 py-4 rounded-2xl mx-2 transition-all duration-300 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/60 text-blue-700 shadow-lg shadow-blue-100/50'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80 hover:shadow-md'
-                        }`}
+                        className={`relative flex items-center justify-center flex-col px-6 py-4 rounded-2xl mx-2 transition-all duration-300 ${isActive
+                          ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/60 text-blue-700 shadow-lg shadow-blue-100/50'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80 hover:shadow-md'
+                          }`}
                       >
                         <item.icon
-                          className={`w-6 h-6 mb-2 transition-all duration-300 ${
-                            isActive ? 'text-blue-600 scale-110' : 'text-gray-500 group-hover:text-gray-700 group-hover:scale-105'
-                          }`}
+                          className={`w-6 h-6 mb-2 transition-all duration-300 ${isActive ? 'text-blue-600 scale-110' : 'text-gray-500 group-hover:text-gray-700 group-hover:scale-105'
+                            }`}
                           strokeWidth={isActive ? 2.5 : 2}
                         />
 
                         <span
-                          className={`text-sm font-medium text-center leading-tight ${
-                            isActive ? 'font-semibold' : 'font-normal'
-                          }`}
+                          className={`text-sm font-medium text-center leading-tight ${isActive ? 'font-semibold' : 'font-normal'
+                            }`}
                         >
                           {item.name}
                         </span>
@@ -126,7 +121,7 @@ export default function Sidebar() {
                   Catálogos
                 </h3>
               </div>
-              
+
               <div className="space-y-2">
                 {catalogos.map((item) => {
                   const isActive = pathname === item.href;
@@ -139,39 +134,35 @@ export default function Sidebar() {
                     >
                       <Link
                         href={item.href}
-                        onClick={() => setSidebarOpen(false)}
                         className="relative group block"
                       >
                         {isActive && (
                           <motion.div
                             layoutId="activeIndicatorCatalogos"
                             className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 bg-gradient-to-b from-emerald-500 to-emerald-600 rounded-r-full shadow-sm"
-                            transition={{ 
-                              type: 'spring', 
-                              stiffness: 400, 
+                            transition={{
+                              type: 'spring',
+                              stiffness: 400,
                               damping: 25
                             }}
                           />
                         )}
 
                         <div
-                          className={`relative flex items-center space-x-3 px-6 py-3 rounded-xl mx-2 transition-all duration-300 ${
-                            isActive
-                              ? 'bg-gradient-to-r from-emerald-50/80 to-emerald-100/60 text-emerald-700 shadow-lg shadow-emerald-100/50'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80 hover:shadow-md'
-                          }`}
+                          className={`relative flex items-center space-x-3 px-6 py-3 rounded-xl mx-2 transition-all duration-300 ${isActive
+                            ? 'bg-gradient-to-r from-emerald-50/80 to-emerald-100/60 text-emerald-700 shadow-lg shadow-emerald-100/50'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50/80 hover:shadow-md'
+                            }`}
                         >
                           <item.icon
-                            className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${
-                              isActive ? 'text-emerald-600' : 'text-gray-500 group-hover:text-gray-700'
-                            }`}
+                            className={`w-5 h-5 flex-shrink-0 transition-all duration-300 ${isActive ? 'text-emerald-600' : 'text-gray-500 group-hover:text-gray-700'
+                              }`}
                             strokeWidth={isActive ? 2.5 : 2}
                           />
 
                           <span
-                            className={`text-sm font-medium ${
-                              isActive ? 'font-semibold' : 'font-normal'
-                            }`}
+                            className={`text-sm font-medium ${isActive ? 'font-semibold' : 'font-normal'
+                              }`}
                           >
                             {item.name}
                           </span>
@@ -203,10 +194,7 @@ export default function Sidebar() {
             Sistema Hospital <span className="text-blue-600 font-semibold">v1.0</span>
           </div>
         </div>
-      </motion.aside>
-
-      {/* Spacer para desktop - Actualizado */}
-      <div className="hidden lg:block w-72 flex-shrink-0" />
-    </>
+      </motion.div>
+    </div>
   );
 }

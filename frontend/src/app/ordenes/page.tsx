@@ -189,6 +189,7 @@ export default function OrdenesPage() {
         fecha_vencimiento: formData.fecha_vencimiento || null,
         estado: formData.tipo === 'preventivo' ? 'En Proceso' : 'Abierta',
         falla_reportada: formData.descripcion || formData.titulo,
+        tecnico_id: formData.tecnico_id || undefined,
         origen: 'Portal'
       });
       showToast.success('¡Orden creada exitosamente!');
@@ -234,6 +235,7 @@ export default function OrdenesPage() {
       estado: order.estado,
       titulo: order.titulo,
       descripcion: orderData.descripcion || order.titulo || '',
+      tecnico_id: orderData.tecnico_id || undefined,
     });
     setIsEditModalOpen(true);
     setOpenMenuId(null);
@@ -249,7 +251,8 @@ export default function OrdenesPage() {
         cliente_id: editFormData.cliente_id,
         prioridad: editFormData.prioridad,
         estado: editFormData.estado,
-        falla_reportada: editFormData.descripcion || editFormData.titulo
+        falla_reportada: editFormData.descripcion || editFormData.titulo,
+        tecnico_id: editFormData.tecnico_id || undefined
       });
       // Manually refresh with current filters to ensure UI sync
       await fetchOrdenes({
@@ -278,6 +281,21 @@ export default function OrdenesPage() {
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  const fetchOrderHistory = async (id: string) => {
+    try {
+      setIsLoadingHistory(true);
+      // const history = await ordenesService.getHistory(id);
+      // setOrderHistory(history);
+      setOrderHistory([]);
+      setShowHistory(true);
+    } catch (error) {
+      console.error('Error al cargar historial:', error);
+      showToast.error('No se pudo cargar el historial');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   const handleChangeStatus = (order: Order) => {
     setStatusOrder(order);
@@ -579,6 +597,7 @@ export default function OrdenesPage() {
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Tipo</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Prioridad</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Estado</th>
+                  <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Técnico</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Cliente</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Creación</th>
                   <th className="text-left py-4 px-4 font-semibold text-[#6E6E73] text-sm uppercase tracking-wider">Vencimiento</th>
@@ -634,6 +653,15 @@ export default function OrdenesPage() {
                       <div className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusColor(order.estado)}`}>
                         {getStatusIcon(order.estado)}
                         <span className="capitalize">{order.estado}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-4 px-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <User size={12} className="text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium text-[#1D1D1F] line-clamp-1">{order.tecnico}</span>
                       </div>
                     </td>
 

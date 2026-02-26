@@ -108,7 +108,7 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
 
     return () => {
       try {
-        ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+        ScrollTrigger.getAll().forEach((trigger: any) => trigger.kill());
       } catch (_) {
         /* noop */
       }

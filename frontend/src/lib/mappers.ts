@@ -196,7 +196,8 @@ export function mapOrderToUI(order: Order): OrderUI {
     descripcion: order.falla_reportada || '',
     fechaCreacion: order.fecha_apertura || '',
     fechaVencimiento: (order as any).fecha_vencimiento || '',
-    tecnico: '',
+    tecnico: (order as any).tecnico ? (order as any).tecnico.nombre : 'Sin asignar',
+    tecnico_id: (order as any).tecnico_id,
     tiempoEstimado: '',
   };
 }
@@ -209,6 +210,7 @@ export function mapOrderToAPI(order: Partial<OrderUI> & { equipo_id?: number; cl
   return {
     equipo_id: order.equipo_id,
     cliente_id: order.cliente_id,
+    tecnico_id: order.tecnico_id,
     prioridad: mapPrioridadToAPI(order.prioridad || 'normal'),
     estado: mapEstadoOrdenToAPI(order.estado || 'abierta'),
     falla_reportada: order.descripcion || order.titulo,
