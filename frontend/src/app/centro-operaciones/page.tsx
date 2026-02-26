@@ -621,84 +621,76 @@ export default function CentroOperacionesPage() {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: index * 0.03 }}
-                                        className={`bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all border-l-4 cursor-pointer ${getPriorityColor(orden.prioridad_calculada)} ${selectedOrder?.id === orden.id ? 'ring-2 ring-blue-500' : ''}`}
+                                        className={`bg-white rounded-xl px-4 py-3 shadow-md hover:shadow-lg transition-all border-l-4 cursor-pointer ${getPriorityColor(orden.prioridad_calculada)} ${selectedOrder?.id === orden.id ? 'ring-2 ring-blue-500' : ''}`}
                                         onClick={() => openDetailPanel(orden)}
                                     >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                {/* Header */}
-                                                <div className="flex items-center space-x-3 mb-3">
-                                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold ${priorityLabel.color}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+
+                                                {/* Fila 1: Badge prioridad + ID + Equipo + N/S */}
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${priorityLabel.color}`}>
                                                         {priorityLabel.text}
                                                     </span>
-                                                    <span className="text-gray-500 text-sm font-semibold">#{orden.id}</span>
+                                                    <span className="text-gray-400 text-xs font-semibold shrink-0">#{orden.id}</span>
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        <Wrench size={13} className="text-gray-500 shrink-0" />
+                                                        <span className="text-sm font-semibold text-gray-900 truncate">{orden.equipo}</span>
+                                                    </div>
                                                     {orden.numero_serie && (
-                                                        <>
-                                                            <span className="text-gray-400">•</span>
-                                                            <span className="text-gray-500 text-sm">{orden.numero_serie}</span>
-                                                        </>
+                                                        <span className="text-gray-400 text-[11px] hidden md:inline">
+                                                            S/N: {orden.numero_serie}
+                                                        </span>
                                                     )}
                                                 </div>
 
-                                                {/* Equipment */}
-                                                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center space-x-2">
-                                                    <Wrench size={18} className="text-gray-600" />
-                                                    <span>{orden.equipo}</span>
-                                                </h3>
-
-                                                {/* Falla reportada */}
+                                                {/* Fila 2: Falla reportada (1 línea) */}
                                                 {orden.falla_reportada && (
-                                                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                                                        <FileText size={14} className="inline mr-1" />
+                                                    <p className="flex items-center gap-1 text-gray-500 text-[11px] mt-1 line-clamp-1">
+                                                        <FileText size={11} className="shrink-0" />
                                                         {orden.falla_reportada}
                                                     </p>
                                                 )}
 
-                                                {/* Details */}
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                                    <div className="flex items-center space-x-2 text-gray-600">
-                                                        <User size={14} />
+                                                {/* Fila 3: Metadatos */}
+                                                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                                                    <div className="flex items-center gap-1 text-gray-600 text-xs">
+                                                        <User size={12} />
                                                         <span>{orden.cliente}</span>
                                                     </div>
 
-                                                    <div className="flex items-center space-x-2">
+                                                    <div className="flex items-center gap-1 text-xs">
                                                         {getStatusIcon(orden.estado)}
                                                         <span className="text-gray-700">{orden.estado}</span>
                                                     </div>
 
                                                     {daysUntilDue !== null && (
-                                                        <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg font-semibold ${daysUntilDue < 0
-                                                                ? 'bg-red-100 border-2 border-red-500 animate-pulse'
+                                                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold text-[11px] ${daysUntilDue < 0
+                                                                ? 'bg-red-100 border border-red-400 animate-pulse'
                                                                 : daysUntilDue === 0
-                                                                    ? 'bg-red-50 border-2 border-red-400'
+                                                                    ? 'bg-red-50 border border-red-300'
                                                                     : daysUntilDue <= 3
                                                                         ? 'bg-orange-100'
                                                                         : 'bg-green-100'
                                                             }`}>
-                                                            <Calendar size={16} className={
-                                                                daysUntilDue < 0
-                                                                    ? 'text-red-700'
-                                                                    : daysUntilDue === 0
-                                                                        ? 'text-red-600'
-                                                                        : daysUntilDue <= 3
-                                                                            ? 'text-orange-600'
+                                                            <Calendar size={11} className={
+                                                                daysUntilDue < 0 ? 'text-red-700'
+                                                                    : daysUntilDue === 0 ? 'text-red-600'
+                                                                        : daysUntilDue <= 3 ? 'text-orange-600'
                                                                             : 'text-green-600'
                                                             } />
                                                             <span className={
-                                                                daysUntilDue < 0
-                                                                    ? 'text-red-900 font-bold'
-                                                                    : daysUntilDue === 0
-                                                                        ? 'text-red-800 font-bold'
-                                                                        : daysUntilDue <= 3
-                                                                            ? 'text-orange-700'
+                                                                daysUntilDue < 0 ? 'text-red-900 font-bold'
+                                                                    : daysUntilDue === 0 ? 'text-red-800 font-bold'
+                                                                        : daysUntilDue <= 3 ? 'text-orange-700'
                                                                             : 'text-green-700'
                                                             }>
                                                                 {daysUntilDue < 0
-                                                                    ? `🚨 VENCIDA hace ${Math.abs(daysUntilDue)} día${Math.abs(daysUntilDue) !== 1 ? 's' : ''}`
+                                                                    ? `VENCIDA hace ${Math.abs(daysUntilDue)} día${Math.abs(daysUntilDue) !== 1 ? 's' : ''}`
                                                                     : daysUntilDue === 0
-                                                                        ? '🔴 VENCE HOY'
+                                                                        ? 'VENCE HOY'
                                                                         : daysUntilDue === 1
-                                                                            ? '⚠️ Vence mañana'
+                                                                            ? 'Vence mañana'
                                                                             : `✓ ${daysUntilDue} días restantes`
                                                                 }
                                                             </span>
@@ -706,37 +698,38 @@ export default function CentroOperacionesPage() {
                                                     )}
 
                                                     {orden.tecnico && (
-                                                        <div className="flex items-center space-x-2 text-gray-600">
-                                                            <User size={14} />
-                                                            <span>Técnico: {orden.tecnico}</span>
+                                                        <div className="flex items-center gap-1 text-gray-600 text-xs">
+                                                            <User size={12} />
+                                                            <span>Tec. {orden.tecnico}</span>
                                                         </div>
                                                     )}
                                                 </div>
+
                                             </div>
 
-                                            {/* Actions */}
-                                            <div className="flex items-center space-x-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                                            {/* Acciones */}
+                                            <div className="flex items-center gap-1.5 shrink-0 self-center" onClick={(e) => e.stopPropagation()}>
                                                 <button
                                                     onClick={() => openStatusModal(orden.id, orden.estado)}
-                                                    className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl transition-all flex items-center space-x-1"
+                                                    className="px-2.5 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all flex items-center gap-1 text-xs"
                                                     title="Cambiar estado"
                                                 >
-                                                    <Edit3 size={16} />
+                                                    <Edit3 size={13} />
                                                     <span className="hidden md:inline">Estado</span>
                                                 </button>
                                                 <button
                                                     onClick={() => openPostponeModal(orden)}
-                                                    className="px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-xl transition-all flex items-center space-x-1"
+                                                    className="px-2.5 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-all flex items-center gap-1 text-xs"
                                                     title="Posponer fecha"
                                                 >
-                                                    <Calendar size={16} />
+                                                    <Calendar size={13} />
                                                     <span className="hidden md:inline">Posponer</span>
                                                 </button>
                                                 <button
                                                     onClick={() => openDetailPanel(orden)}
-                                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all flex items-center space-x-1"
+                                                    className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all flex items-center gap-1 text-xs"
                                                 >
-                                                    <Eye size={16} />
+                                                    <Eye size={13} />
                                                     <span className="hidden md:inline">Ver</span>
                                                 </button>
                                             </div>

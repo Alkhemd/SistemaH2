@@ -96,63 +96,91 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
         {stats ? [
           {
             title: 'Total Equipos',
             value: stats?.totalEquipments?.toString() || '0',
             icon: CubeIcon,
             description: 'equipos registrados',
-            color: 'blue'
+            gradient: 'from-blue-50 via-blue-100/50 to-transparent',
+            iconBg: 'from-blue-100 to-blue-50',
+            iconColor: 'text-blue-600',
+            valueGradient: 'from-blue-600 to-blue-400',
+            hoverAccent: 'bg-blue-500/5'
           },
           {
             title: 'Órdenes Abiertas',
             value: stats?.openOrders?.toString() || '0',
             icon: ExclamationTriangleIcon,
             description: 'pendientes',
-            color: 'red'
+            gradient: 'from-red-50 via-red-100/50 to-transparent',
+            iconBg: 'from-red-100 to-red-50',
+            iconColor: 'text-red-600',
+            valueGradient: 'from-red-600 to-red-400',
+            hoverAccent: 'bg-red-500/5'
           },
           {
             title: 'En Mantenimiento',
             value: stats?.maintenanceEquipments?.toString() || '0',
             icon: ClockIcon,
             description: 'equipos',
-            color: 'amber'
+            gradient: 'from-amber-50 via-amber-100/50 to-transparent',
+            iconBg: 'from-amber-100 to-amber-50',
+            iconColor: 'text-amber-600',
+            valueGradient: 'from-amber-600 to-amber-400',
+            hoverAccent: 'bg-amber-500/5'
           },
           {
             title: 'Operativos',
             value: stats?.operativeEquipments?.toString() || '0',
             icon: CheckCircleIcon,
             description: 'funcionando',
-            color: 'green'
+            gradient: 'from-green-50 via-green-100/50 to-transparent',
+            iconBg: 'from-green-100 to-green-50',
+            iconColor: 'text-green-600',
+            valueGradient: 'from-green-600 to-green-400',
+            hoverAccent: 'bg-green-500/5'
           }
         ].map((stat: any, index: number) => (
-          <div key={stat.title} className="card" style={{ animationDelay: `${index * 0.1}s` }}>
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <p className="text-sm font-medium neuro-text-secondary mb-1">
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="group"
+          >
+            <div className="neuro-card-soft p-4 relative overflow-hidden hover:scale-[1.02] transition-all duration-300">
+              {/* Gradient Background */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-60`} />
+
+              {/* Content */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                     {stat.title}
                   </p>
-                  <p className="text-4xl font-bold neuro-text-primary mb-2">
+                  <p className={`text-4xl font-bold bg-gradient-to-br ${stat.valueGradient} bg-clip-text text-transparent`}>
                     {stat.value}
                   </p>
-                  <p className="text-sm neuro-text-tertiary">
-                    {stat.description}
-                  </p>
+                  <p className="text-xs text-gray-400 mt-1">{stat.description}</p>
                 </div>
-                <div className="w-12 h-12 neuro-convex-sm flex items-center justify-center">
-                  <stat.icon className="w-6 h-6 neuro-text-secondary" />
+                <div className={`w-14 h-14 neuro-convex-sm rounded-2xl flex items-center justify-center bg-gradient-to-br ${stat.iconBg}`}>
+                  <stat.icon className={`w-7 h-7 ${stat.iconColor}`} />
                 </div>
               </div>
+
+              {/* Hover Accent */}
+              <div className={`absolute inset-0 ${stat.hoverAccent} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
             </div>
-          </div>
+          </motion.div>
         )) : (
           <div className="col-span-4 card p-8 text-center">
             <p className="neuro-text-secondary">No se pudieron cargar las estadísticas</p>
           </div>
         )}
       </div>
+
 
       {/* Charts Grid */}
       {chartData && (
