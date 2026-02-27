@@ -94,7 +94,7 @@ export default function SidebarWithBlur() {
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <motion.h1
-            className="text-xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-blue-700 bg-clip-text text-transparent"
+            className="text-xl font-bold bg-gradient-to-r from-blue-900 to-blue-400 bg-clip-text text-transparent"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >

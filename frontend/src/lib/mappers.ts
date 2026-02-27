@@ -198,6 +198,7 @@ export function mapOrderToUI(order: Order): OrderUI {
     fechaVencimiento: (order as any).fecha_vencimiento || '',
     tecnico: (order as any).tecnico ? (order as any).tecnico.nombre : 'Sin asignar',
     tecnico_id: (order as any).tecnico_id,
+    tecnico_avatar: (order as any).tecnico?.avatar_url || '',
     tiempoEstimado: '',
   };
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Avatar } from '@/components/ui/Avatar';
 import {
     Activity,
     Filter,
@@ -36,6 +37,7 @@ interface Order {
     numero_serie?: string;
     cliente: string;
     tecnico?: string;
+    tecnico_avatar?: string;
     fecha_vencimiento?: string;
     modalidad: string;
     falla_reportada?: string;
@@ -698,9 +700,14 @@ export default function CentroOperacionesPage() {
                                                     )}
 
                                                     {orden.tecnico && (
-                                                        <div className="flex items-center gap-1 text-gray-600 text-xs">
-                                                            <User size={12} />
-                                                            <span>Tec. {orden.tecnico}</span>
+                                                        <div className="flex items-center gap-1.5 text-gray-700 text-xs bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                                            <Avatar
+                                                                src={orden.tecnico_avatar}
+                                                                fallback={orden.tecnico}
+                                                                size="sm"
+                                                                className="w-5 h-5 shadow-sm"
+                                                            />
+                                                            <span className="font-medium truncate max-w-[120px]">Tec. {orden.tecnico}</span>
                                                         </div>
                                                     )}
                                                 </div>

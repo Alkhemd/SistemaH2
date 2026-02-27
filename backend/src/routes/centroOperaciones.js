@@ -17,7 +17,7 @@ router.get('/ordenes-activas', async (req, res) => {
             .from('orden_trabajo')
             .select(`
                 *,
-                tecnico:usuario_asignado (tecnico_id, nombre),
+                tecnico:usuario_asignado (tecnico_id, nombre, avatar_url),
                 equipo:equipo_id (
                     equipo_id, 
                     modelo, 
@@ -67,6 +67,7 @@ router.get('/ordenes-activas', async (req, res) => {
             numero_serie: orden.equipo?.numero_serie || 'N/A',
             cliente: orden.cliente?.nombre || 'Sin cliente',
             tecnico: orden.tecnico?.nombre || null,
+            tecnico_avatar: orden.tecnico?.avatar_url || null,
             fecha_vencimiento: orden.fecha_vencimiento,
             modalidad: orden.equipo?.modalidad?.codigo || 'N/A',
             modalidad_prioridad_alta: orden.equipo?.modalidad?.prioridad_alta || false,

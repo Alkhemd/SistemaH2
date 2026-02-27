@@ -29,6 +29,7 @@ import { useStore } from '@/store/useStore';
 import { formatDateTime } from '@/lib/utils';
 import { clientesService } from '@/services/clientesService';
 import { equiposService } from '@/services/equiposService';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface Order {
   id: string;
@@ -45,6 +46,7 @@ interface Order {
   fechaCreacion: string;
   fechaVencimiento?: string;
   tecnico?: string;
+  tecnico_avatar?: string;
   tiempoEstimado: string;
 }
 
@@ -657,11 +659,32 @@ export default function OrdenesPage() {
                     </td>
 
                     <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                          <User size={12} className="text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium text-[#1D1D1F] line-clamp-1">{order.tecnico}</span>
+                      <div className="group relative flex items-center space-x-2 w-fit">
+                        <Avatar
+                          src={order.tecnico_avatar || ''}
+                          alt={order.tecnico || 'Técnico'}
+                          fallback={order.tecnico || 'T'}
+                          className="w-6 h-6 flex-shrink-0 border-none"
+                        />
+                        <span className="text-sm font-medium text-[#1D1D1F] line-clamp-1 cursor-default">{order.tecnico}</span>
+
+                        {/* Hover Card */}
+                        {order.tecnico && order.tecnico !== 'Sin asignar' && (
+                          <div className="absolute left-0 top-full mt-2 w-48 bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div className="flex items-center space-x-3">
+                              <Avatar
+                                src={order.tecnico_avatar || ''}
+                                alt={order.tecnico}
+                                fallback={order.tecnico}
+                                className="w-10 h-10 border-2 border-white/50 shadow-sm"
+                              />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-[#1D1D1F] leading-tight break-words">{order.tecnico}</span>
+                                <span className="text-xs font-medium text-[#86868B] mt-0.5">Técnico Asignado</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </td>
 

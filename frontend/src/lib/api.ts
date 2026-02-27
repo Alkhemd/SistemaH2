@@ -58,6 +58,7 @@ export interface Tecnico {
   email?: string;
   base_ciudad?: string;
   activo?: number;
+  avatar_url?: string;
 }
 
 // Tipos actualizados para coincidir con backend
@@ -138,6 +139,7 @@ export interface Order {
   fechaVencimiento?: string;
   tecnico?: string;
   tecnico_id?: number;
+  tecnico_avatar?: string;
   tiempoEstimado?: string;
 }
 
@@ -213,11 +215,23 @@ export const tecnicoApi = {
   getActivos: () => api.get<ApiResponse<Tecnico[]>>('/tecnicos/activos'),
 };
 
-// Dashboard API
 export const dashboardApi = {
   getEstadisticas: () => api.get<ApiResponse<any>>('/dashboard/estadisticas'),
   getActividadReciente: (limit?: number) => api.get<ApiResponse<any>>('/dashboard/actividad-reciente', { params: { limit } }),
   getResumen: () => api.get<ApiResponse<any>>('/dashboard/resumen'),
+};
+
+export const storageApi = {
+  uploadImage: (file: File, bucket: string = 'avatars') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('bucket', bucket);
+    return api.post<{ success: boolean; url: string; fileName: string }>('/storage/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export default api;

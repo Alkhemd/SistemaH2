@@ -1,5 +1,6 @@
 import React from 'react';
 import { TechnicianWorkload } from '@/services/dashboardService';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface TechnicianWorkloadListProps {
     data: TechnicianWorkload[];
@@ -27,9 +28,12 @@ export default function TechnicianWorkloadList({ data }: TechnicianWorkloadListP
                                 <div key={tech.id} className="relative">
                                     <div className="flex justify-between items-end mb-1">
                                         <span className="text-sm font-medium neuro-text-primary flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                                                {tech.name.charAt(0)}
-                                            </div>
+                                            <Avatar
+                                                src={tech.avatar_url || ''}
+                                                alt={tech.name}
+                                                fallback={tech.name}
+                                                className="w-6 h-6 border-none"
+                                            />
                                             {tech.name}
                                         </span>
                                         <span className="text-xs font-bold neuro-text-secondary">

@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
             .from('orden_trabajo')
             .select(`
                 *,
-                tecnico:usuario_asignado(tecnico_id, nombre),
+                tecnico:usuario_asignado(tecnico_id, nombre, avatar_url),
                 equipo:equipo_id(
                     equipo_id,
                     modelo,
@@ -146,7 +146,7 @@ router.post('/', async (req, res) => {
             .insert([dataWithDefaults])
             .select(`
         *,
-        tecnico:usuario_asignado(tecnico_id, nombre),
+        tecnico:usuario_asignado(tecnico_id, nombre, avatar_url),
         equipo:equipo_id(
           equipo_id,
           modelo,
@@ -196,7 +196,7 @@ router.put('/:id', async (req, res) => {
             .eq('orden_id', id)
             .select(`
         *,
-        tecnico:usuario_asignado(tecnico_id, nombre),
+        tecnico:usuario_asignado(tecnico_id, nombre, avatar_url),
         equipo:equipo_id(
           equipo_id,
           modelo,

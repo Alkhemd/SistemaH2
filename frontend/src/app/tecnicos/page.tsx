@@ -10,6 +10,7 @@ import { ActionCard } from '@/components/ui/ActionCard';
 import { TecnicoForm } from '@/components/forms/TecnicoForm';
 import { tecnicosService } from '@/services/tecnicosService';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { Avatar } from '@/components/ui/Avatar';
 
 const especialidadLabels = {
   'XR': 'Rayos X',
@@ -71,7 +72,8 @@ export default function TecnicosPage() {
         telefono: data.telefono,
         email: data.email,
         base_ciudad: data.base_ciudad,
-        activo: data.activo
+        activo: data.activo,
+        avatar_url: data.avatar_url
       });
       setIsCreateModalOpen(false);
       fetchTecnicos(currentPage, searchTerm); // Refetch
@@ -92,7 +94,8 @@ export default function TecnicosPage() {
         telefono: data.telefono,
         email: data.email,
         base_ciudad: data.base_ciudad,
-        activo: data.activo
+        activo: data.activo,
+        avatar_url: data.avatar_url
       });
       setIsEditModalOpen(false);
       setSelectedTecnico(null);
@@ -208,9 +211,11 @@ export default function TecnicosPage() {
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tecnico.activo ? 'bg-green-100' : 'bg-gray-100'}`}>
-                          <UserIcon className={`w-6 h-6 ${tecnico.activo ? 'text-green-600' : 'text-gray-400'}`} />
-                        </div>
+                        <Avatar
+                          src={tecnico.avatar_url}
+                          fallback={tecnico.nombre}
+                          size="md"
+                        />
                         <div>
                           <h3 className="font-semibold text-gray-900 text-lg">
                             {tecnico.nombre}
@@ -307,10 +312,11 @@ export default function TecnicosPage() {
           <div className="p-6 space-y-6">
             {/* Header with Avatar */}
             <div className="flex items-center space-x-4 pb-4 border-b border-gray-100">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${selectedTecnico.activo ? 'bg-gradient-to-br from-green-50 to-green-100' : 'bg-gradient-to-br from-gray-50 to-gray-100'
-                }`}>
-                <UserIcon className={`w-8 h-8 ${selectedTecnico.activo ? 'text-green-600' : 'text-gray-400'}`} />
-              </div>
+              <Avatar
+                src={selectedTecnico.avatar_url}
+                fallback={selectedTecnico.nombre}
+                size="lg"
+              />
               <div>
                 <h3 className="text-xl font-bold text-[#1D1D1F]">{selectedTecnico.nombre}</h3>
                 <div className="flex items-center space-x-2 mt-1">

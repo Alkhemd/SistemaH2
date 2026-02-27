@@ -9,6 +9,7 @@ export interface Tecnico {
   email?: string;
   base_ciudad?: string;
   activo?: boolean;
+  avatar_url?: string;
 }
 
 class TecnicosService {

@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Tecnico } from '@/lib/api';
+import { Avatar } from '@/components/ui/Avatar';
+import { Tecnico, storageApi } from '@/lib/api';
 
 // Esquema de validación para Técnico
 const tecnicoSchema = z.object({
@@ -28,6 +30,7 @@ const tecnicoSchema = z.object({
     .max(100, 'La ciudad base no puede exceder 100 caracteres')
     .optional(),
   activo: z.boolean(),
+  avatar_url: z.string().optional(),
 });
 
 type TecnicoFormData = z.infer<typeof tecnicoSchema>;
@@ -97,6 +100,8 @@ export const TecnicoForm: React.FC<TecnicoFormProps> = ({
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
     reset
   } = useForm<TecnicoFormData>({
@@ -108,7 +113,8 @@ export const TecnicoForm: React.FC<TecnicoFormProps> = ({
       telefono: tecnico.telefono || '',
       email: tecnico.email || '',
       base_ciudad: tecnico.base_ciudad || '',
-      activo: tecnico.activo === 1 || tecnico.activo === undefined
+      activo: tecnico.activo === 1 || tecnico.activo === undefined,
+      avatar_url: tecnico.avatar_url || ''
     } : {
       nombre: '',
       especialidad: undefined,
@@ -116,9 +122,34 @@ export const TecnicoForm: React.FC<TecnicoFormProps> = ({
       telefono: '',
       email: '',
       base_ciudad: '',
-      activo: true
+      activo: true,
+      avatar_url: ''
     }
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const res = await storageApi.uploadImage(file, 'imagenes_equipo');
+      if (res.data.success) {
+        setValue('avatar_url', res.data.url, { shouldDirty: true });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error al subir la imagen');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const onFormSubmit = async (data: TecnicoFormData) => {
     try {
@@ -145,6 +176,47 @@ export const TecnicoForm: React.FC<TecnicoFormProps> = ({
             {tecnico ? 'Editar Técnico' : 'Nuevo Técnico'}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Foto del Técnico */}
+            <div className="md:col-span-2 flex items-center mb-4">
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <Avatar
+                  src={watch('avatar_url')}
+                  fallback={watch('nombre')}
+                  size="xl"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {isUploading ? (
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-white" />
+                  )}
+                </div>
+              </div>
+              <div className="ml-6 flex items-center">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900">Foto del Técnico</h4>
+                  <p className="text-xs text-gray-500 mt-1">Sube una imagen para identificar a este técnico.</p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-3 text-sm py-1"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading || isSubmitting || isLoading}
+                  >
+                    {isUploading ? 'Subiendo...' : 'Elegir foto'}
+                  </Button>
+                </div>
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+                accept="image/*"
+              />
+            </div>
+
             <div className="md:col-span-2">
               <label className="form-label">
                 Nombre Completo *

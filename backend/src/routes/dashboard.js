@@ -344,7 +344,7 @@ router.get('/technician-workload', async (req, res) => {
                 estado,
                 prioridad,
                 usuario_asignado,
-                tecnico:usuario_asignado (nombre)
+                tecnico:usuario_asignado (nombre, avatar_url)
             `)
             .in('estado', ['Abierta', 'Asignada', 'En Proceso']);
 
@@ -361,7 +361,13 @@ router.get('/technician-workload', async (req, res) => {
             // if needed, keeping it structured and fail-safe for now.
 
             if (!techParams[tecId]) {
-                techParams[tecId] = { id: tecId, name, orders: 0, urgentes: 0 };
+                techParams[tecId] = {
+                    id: tecId,
+                    name,
+                    avatar_url: orden.tecnico?.avatar_url || null,
+                    orders: 0,
+                    urgentes: 0
+                };
             }
 
             techParams[tecId].orders += 1;

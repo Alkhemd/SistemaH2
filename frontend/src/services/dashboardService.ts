@@ -40,6 +40,7 @@ export interface SummaryStats {
 export interface TechnicianWorkload {
   id: string;
   name: string;
+  avatar_url?: string | null;
   orders: number;
   urgentes: number;
 }

@@ -56,6 +56,7 @@ export interface OrderUI {
   fechaCreacion: string;
   fechaVencimiento?: string;
   tecnico?: string;
+  tecnico_avatar?: string;
   tiempoEstimado: string;
 }
 
@@ -135,6 +136,7 @@ export const mapOrderToUI = (order: Order): OrderUI => ({
   fechaVencimiento: order.fechaVencimiento,
   tecnico: order.tecnico,
   tecnico_id: order.tecnico_id,
+  tecnico_avatar: order.tecnico_avatar || '',
   tiempoEstimado: order.tiempoEstimado || '2 horas',
 });
 
