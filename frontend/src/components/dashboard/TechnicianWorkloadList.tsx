@@ -26,20 +26,23 @@ export default function TechnicianWorkloadList({ data }: TechnicianWorkloadListP
 
                             return (
                                 <div key={tech.id} className="relative">
-                                    <div className="flex justify-between items-end mb-1">
-                                        <span className="text-sm font-medium neuro-text-primary flex items-center gap-2">
+                                    <div className="flex justify-between items-center mb-2 gap-4">
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
                                             <Avatar
                                                 src={tech.avatar_url || ''}
                                                 alt={tech.name}
                                                 fallback={tech.name}
-                                                className="w-6 h-6 border-none"
+                                                size="sm"
+                                                className="border-none shrink-0"
                                             />
-                                            {tech.name}
-                                        </span>
-                                        <span className="text-xs font-bold neuro-text-secondary">
+                                            <span className="text-sm font-medium neuro-text-primary truncate" title={tech.name}>
+                                                {tech.name}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs font-bold neuro-text-secondary shrink-0 text-right">
                                             {tech.orders} {tech.orders === 1 ? 'orden' : 'órdenes'}
                                             {tech.urgentes > 0 && <span className="text-red-500 ml-1">({tech.urgentes} urgentes)</span>}
-                                        </span>
+                                        </div>
                                     </div>
                                     <div className="w-full bg-gray-100 rounded-full h-2.5 neuro-inner-shadow overflow-hidden">
                                         <div
