@@ -119,7 +119,7 @@ export function mapClientToUI(client: any): ClientUI {
       email: client.email || '',
       responsable: responsable || 'Sin responsable',
     },
-    estado_cliente: 'activo', // Por defecto activo, no existe en BD
+    activo: client.activo ?? true,
     equiposCount: client.equipos_count || 0, // Usar el conteo de la query
     fechaRegistro: '',
     ultimaActividad: new Date().toISOString().split('T')[0],
@@ -138,6 +138,7 @@ export function mapClientToAPI(client: Partial<ClientUI>): Partial<Client> {
     contacto: client.contacto?.responsable, // Solo el nombre del responsable
     telefono: client.contacto?.telefono,
     email: client.contacto?.email,
+    activo: client.activo,
   };
 }
 

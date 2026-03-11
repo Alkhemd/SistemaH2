@@ -29,7 +29,8 @@ router.get('/paginated', async (req, res) => {
             .select('*', { count: 'exact' });
 
         if (search.trim()) {
-            query = query.or(`codigo.ilike.%${search}%,descripcion.ilike.%${search}%`);
+            const sanitizedSearch = search.trim().replace(/[()]/g, '');
+            query = query.or(`codigo.ilike.%${sanitizedSearch}%,descripcion.ilike.%${sanitizedSearch}%`);
         }
 
         query = query
@@ -59,18 +60,9 @@ router.get('/paginated', async (req, res) => {
 // POST create modalidad
 router.post('/', async (req, res) => {
     try {
-        const { data: maxIdResult } = await supabase
-            .from('modalidad')
-            .select('modalidad_id')
-            .order('modalidad_id', { ascending: false })
-            .limit(1)
-            .single();
-
-        const nextId = maxIdResult ? maxIdResult.modalidad_id + 1 : 1;
-
         const { data, error } = await supabase
             .from('modalidad')
-            .insert([{ ...req.body, modalidad_id: nextId }])
+            .insert([{ ...req.body }])
             .select()
             .single();
 

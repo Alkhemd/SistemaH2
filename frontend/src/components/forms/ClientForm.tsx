@@ -43,7 +43,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         email: (client as any).email || '',
         responsable: typeof (client as any).contacto === 'string' ? (client as any).contacto : ''
       },
-      estado_cliente: (client as any).estado_cliente || 'activo'
+      activo: (client as any).activo ? 'activo' as const : 'inactivo' as const
     } : {
       nombre: '',
       tipo: 'publico' as const,
@@ -54,7 +54,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         email: '',
         responsable: ''
       },
-      estado_cliente: 'activo' as const
+      activo: 'activo' as const
     }
   });
 
@@ -219,14 +219,14 @@ export const ClientForm: React.FC<ClientFormProps> = ({
               Estado del Cliente *
             </label>
             <select
-              {...register('estado_cliente')}
-              className={`input-field ${errors.estado_cliente ? 'border-red-500' : ''}`}
+              {...register('activo')}
+              className={`input-field ${errors.activo ? 'border-red-500' : ''}`}
             >
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
             </select>
-            {errors.estado_cliente && (
-              <p className="form-error">{errors.estado_cliente.message}</p>
+            {errors.activo && (
+              <p className="form-error">{errors.activo.message}</p>
             )}
           </div>
         </div>

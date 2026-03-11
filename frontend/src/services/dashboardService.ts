@@ -16,6 +16,7 @@ export interface RecentActivity {
   equipment?: string;
   client?: string;
   time?: string;
+  fullTime?: string;
 }
 
 export interface TrendData {
@@ -50,8 +51,8 @@ class DashboardService {
     return backendClient.get<DashboardStats>('/dashboard/stats');
   }
 
-  async getActividadReciente(): Promise<{ data: RecentActivity[] | null; error: any }> {
-    return backendClient.get<RecentActivity[]>('/dashboard/activity');
+  async getActividadReciente(limit: number = 10): Promise<{ data: RecentActivity[] | null; error: any }> {
+    return backendClient.get<RecentActivity[]>(`/dashboard/activity?limit=${limit}`);
   }
 
   async getChartData(): Promise<{ data: any | null; error: any }> {

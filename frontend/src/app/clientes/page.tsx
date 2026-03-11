@@ -69,7 +69,7 @@ export default function ClientesPage() {
   const filteredClients = useMemo(() => {
     const filtered = clients.filter(client => {
       const matchesTipo = selectedTipo === '' || client.tipo === selectedTipo;
-      const matchesEstado = selectedEstado === '' || client.estado_cliente === selectedEstado;
+      const matchesEstado = selectedEstado === '' || (selectedEstado === 'activo' ? client.activo : !client.activo);
 
       return matchesTipo && matchesEstado;
     });
@@ -166,8 +166,8 @@ export default function ClientesPage() {
       : 'bg-purple-50 text-purple-600';
   };
 
-  const getEstadoColor = (estado: ClientUI['estado_cliente']) => {
-    return estado === 'activo'
+  const getEstadoColor = (activo: boolean) => {
+    return activo
       ? 'bg-green-50 text-green-600'
       : 'bg-gray-50 text-gray-600';
   };
@@ -298,8 +298,8 @@ export default function ClientesPage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTipoColor(client.tipo)}`}>
                       {client.tipo === 'publico' ? 'Público' : 'Privado'}
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(client.estado_cliente)}`}>
-                      {client.estado_cliente === 'activo' ? 'Activo' : 'Inactivo'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getEstadoColor(client.activo)}`}>
+                      {client.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
 
@@ -423,9 +423,9 @@ export default function ClientesPage() {
                   }`}>
                   {selectedClient.tipo === 'publico' ? 'Público' : 'Privado'}
                 </span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedClient.estado_cliente === 'activo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedClient.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                   }`}>
-                  {selectedClient.estado_cliente === 'activo' ? 'Activo' : 'Inactivo'}
+                  {selectedClient.activo ? 'Activo' : 'Inactivo'}
                 </span>
               </div>
             </div>

@@ -32,7 +32,8 @@ router.get('/paginated', async (req, res) => {
             .select('*', { count: 'exact' });
 
         if (search.trim()) {
-            query = query.or(`nombre.ilike.%${search}%,especialidad.ilike.%${search}%,base_ciudad.ilike.%${search}%`);
+            const sanitizedSearch = search.trim().replace(/[()]/g, '');
+            query = query.or(`nombre.ilike.%${sanitizedSearch}%,especialidad.ilike.%${sanitizedSearch}%,base_ciudad.ilike.%${sanitizedSearch}%`);
         }
 
         query = query
@@ -65,15 +66,7 @@ router.get('/paginated', async (req, res) => {
 // POST create tecnico
 router.post('/', async (req, res) => {
     try {
-        const { data: maxIdResult } = await supabase
-            .from('tecnico')
-            .select('tecnico_id')
-            .order('tecnico_id', { ascending: false })
-            .limit(1)
-            .single();
-
-        const nextId = maxIdResult ? maxIdResult.tecnico_id + 1 : 1;
-        const dataWithId = { ...req.body, tecnico_id: nextId };
+        const dataWithId = { ...req.body };
 
         const { data, error } = await supabase
             .from('tecnico')

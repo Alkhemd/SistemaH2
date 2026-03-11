@@ -33,7 +33,8 @@ router.get('/', async (req, res) => {
 
         // Global search if search term exists
         if (search.trim()) {
-            query = query.or(`nombre.ilike.%${search}%,ciudad.ilike.%${search}%,estado.ilike.%${search}%,contacto.ilike.%${search}%`);
+            const sanitizedSearch = search.trim().replace(/[()]/g, '');
+            query = query.or(`nombre.ilike.%${sanitizedSearch}%,ciudad.ilike.%${sanitizedSearch}%,estado.ilike.%${sanitizedSearch}%,contacto.ilike.%${sanitizedSearch}%`);
         } else {
             // Pagination only when no search
             query = query.range(offset, offset + limit - 1);
@@ -77,15 +78,7 @@ router.get('/', async (req, res) => {
 // POST create cliente
 router.post('/', async (req, res) => {
     try {
-        const { data: maxIdResult } = await supabase
-            .from('cliente')
-            .select('cliente_id')
-            .order('cliente_id', { ascending: false })
-            .limit(1)
-            .single();
-
-        const nextId = maxIdResult ? maxIdResult.cliente_id + 1 : 1;
-        const dataWithId = { ...req.body, cliente_id: nextId };
+        const dataWithId = { ...req.body };
 
         const { data, error } = await supabase
             .from('cliente')

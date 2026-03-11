@@ -1,116 +1,139 @@
-'use client';
-
 import { motion } from 'framer-motion';
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  Clock, 
-  User, 
-  Wrench,
-  FileText
+import {
+  User,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
+import Link from 'next/link';
 
-interface Activity {
-  id: string;
-  type: 'completed' | 'warning' | 'pending' | 'maintenance' | 'created';
-  title: string;
+export interface Activity {
+  id: string | number;
+  type: string;
   description: string;
   timestamp: string;
-  user?: string;
+  time: string;
+  fullTime?: string;
+  status: string;
+  equipment?: string;
+  client?: string;
+  usuario?: string;
 }
 
 interface ActivityTimelineProps {
   activities: Activity[];
+  showTitle?: boolean;
+  limit?: number;
 }
 
-const ActivityTimeline = ({ activities }: ActivityTimelineProps) => {
-  const getActivityIcon = (type: Activity['type']) => {
-    switch (type) {
-      case 'completed':
-        return { icon: CheckCircle, color: 'text-[#34C759]', bg: 'bg-green-50' };
-      case 'warning':
-        return { icon: AlertTriangle, color: 'text-[#FF9500]', bg: 'bg-orange-50' };
-      case 'pending':
-        return { icon: Clock, color: 'text-[#007AFF]', bg: 'bg-blue-50' };
-      case 'maintenance':
-        return { icon: Wrench, color: 'text-[#6E6E73]', bg: 'bg-gray-50' };
-      case 'created':
-        return { icon: FileText, color: 'text-[#0071E3]', bg: 'bg-blue-50' };
+const ActivityTimeline = ({ activities, showTitle = true, limit }: ActivityTimelineProps) => {
+  const displayActivities = limit ? activities.slice(0, limit) : activities;
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Cerrada':
+      case 'Completada':
+      case 'INSERT':
+        return 'bg-green-500';
+      case 'En Proceso':
+      case 'Asignada':
+      case 'UPDATE':
+        return 'bg-yellow-500';
+      case 'DELETE':
+      case 'Alarma':
+        return 'bg-red-500';
       default:
-        return { icon: Clock, color: 'text-[#6E6E73]', bg: 'bg-gray-50' };
+        return 'bg-blue-500';
     }
   };
 
+  const getBadgeStyles = (type: string, status: string) => {
+    const isUrgent = type === 'Crítica' || type === 'Alta';
+    const isSuccess = status === 'Cerrada' || status === 'Completada' || status === 'INSERT';
+    const isWarning = status === 'En Proceso' || status === 'Asignada' || status === 'UPDATE';
+
+    return {
+      type: `inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${isUrgent ? 'text-red-600' : type === 'Media' ? 'text-yellow-600' : 'text-green-600'
+        }`,
+      status: `inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${isSuccess ? 'text-green-600 bg-green-50' : isWarning ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50'
+        }`
+    };
+  };
+
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-[#1D1D1F]">
-          Actividad Reciente
-        </h3>
-        <button className="text-[#0071E3] hover:text-[#0077ED] font-medium text-sm transition-colors duration-200">
-          Ver todas →
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {activities.map((activity, index) => {
-          const { icon: Icon, color, bg } = getActivityIcon(activity.type);
-          
-          return (
-            <motion.div
-              key={activity.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="flex items-start space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-            >
-              {/* Icon */}
-              <div className={`p-2 rounded-lg ${bg} flex-shrink-0`}>
-                <Icon size={16} className={color} />
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-[#1D1D1F] truncate">
-                    {activity.title}
-                  </h4>
-                  <span className="text-xs text-[#86868B] flex-shrink-0 ml-2">
-                    {activity.timestamp}
-                  </span>
-                </div>
-                
-                <p className="text-sm text-[#6E6E73] mt-1 line-clamp-2">
-                  {activity.description}
-                </p>
-                
-                {activity.user && (
-                  <div className="flex items-center mt-2 text-xs text-[#86868B]">
-                    <User size={12} className="mr-1" />
-                    {activity.user}
-                  </div>
-                )}
-              </div>
-
-              {/* Timeline Line */}
-              {index < activities.length - 1 && (
-                <div className="absolute left-8 mt-12 w-px h-8 bg-gray-200" />
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {activities.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock size={24} className="text-[#86868B]" />
-          </div>
-          <p className="text-[#6E6E73] font-medium">
-            No hay actividad reciente
-          </p>
+    <div className="space-y-6">
+      {showTitle && (
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold neuro-text-primary">
+            Actividad Reciente
+          </h2>
+          <Link href="/historial" className="neuro-button px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors flex items-center space-x-2">
+            <span>Ver todo</span>
+            <ExternalLink size={14} />
+          </Link>
         </div>
       )}
+
+      <div className="space-y-4">
+        {displayActivities && displayActivities.length > 0 ? (
+          displayActivities.map((activity, index) => {
+            const badgeStyles = getBadgeStyles(activity.type, activity.status);
+
+            return (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between p-4 neuro-convex-sm hover:neuro-concave-sm rounded-xl transition-all duration-200"
+              >
+                <div className="flex items-center space-x-4 min-w-0">
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${getStatusColor(activity.status)} shadow-sm`} />
+                  <div className="truncate">
+                    <p className="font-medium neuro-text-primary truncate">
+                      {activity.equipment || activity.description || 'Actividad del sistema'}
+                    </p>
+                    <p className="text-sm neuro-text-secondary truncate">
+                      {activity.client ? `${activity.client} • ` : ''}{activity.description}
+                    </p>
+                    {activity.usuario && (
+                      <div className="flex items-center mt-1 text-xs text-gray-400">
+                        <User size={10} className="mr-1" />
+                        <span>{activity.usuario}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-right flex flex-col items-end flex-shrink-0 ml-4 space-y-1">
+                  <div className="flex items-center text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+                    <Clock size={12} className="mr-1" />
+                    <span>{activity.time}</span>
+                  </div>
+                  {activity.fullTime && (
+                    <div className="text-[10px] text-gray-500 font-medium bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100 italic">
+                      {activity.fullTime}
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className={badgeStyles.status}>
+                      {activity.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
+        ) : (
+          <div className="text-center py-12 neuro-convex-sm rounded-2xl">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock size={24} className="text-gray-400" />
+            </div>
+            <p className="neuro-text-secondary font-medium">
+              No hay actividad reciente
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

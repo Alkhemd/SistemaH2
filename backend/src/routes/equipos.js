@@ -47,8 +47,9 @@ router.get('/', async (req, res) => {
 
         // Si hay búsqueda, buscar en toda la BD (ignorar paginación)
         if (search.trim()) {
-            // Búsqueda global - no pagination
-            query = query.or(`modelo.ilike.%${search}%,numero_serie.ilike.%${search}%`);
+            // Global search if search term exists
+            const sanitizedSearch = search.trim().replace(/[()]/g, '');
+            query = query.or(`modelo.ilike.%${sanitizedSearch}%,numero_serie.ilike.%${sanitizedSearch}%,ubicacion.ilike.%${sanitizedSearch}%`);
 
             const { data, error, count } = await query.order('equipo_id', { ascending: false });
 
@@ -99,15 +100,7 @@ router.post('/', async (req, res) => {
         console.log('=== Creating equipo - Request body:', JSON.stringify(req.body, null, 2));
 
         // Get next ID
-        const { data: maxIdResult } = await supabase
-            .from('equipo')
-            .select('equipo_id')
-            .order('equipo_id', { ascending: false })
-            .limit(1)
-            .single();
-
-        const nextId = maxIdResult ? maxIdResult.equipo_id + 1 : 1;
-        const dataWithId = { ...req.body, equipo_id: nextId };
+        const dataWithId = { ...req.body };
 
         console.log('=== Data being inserted:', JSON.stringify(dataWithId, null, 2));
 

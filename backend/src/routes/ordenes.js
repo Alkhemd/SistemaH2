@@ -46,7 +46,9 @@ router.get('/', async (req, res) => {
 
         // If search term exists, search without pagination (return all matches)
         if (search.trim()) {
-            query = query.or(`falla_reportada.ilike.%${search}%`);
+            // Sanitize search term to prevent issues with PostgREST
+            const sanitizedSearch = search.trim().replace(/[()]/g, '');
+            query = query.or(`falla_reportada.ilike.%${sanitizedSearch}%`);
 
             const { data, error, count } = await query.order('orden_id', { ascending: false });
 
@@ -116,18 +118,8 @@ router.post('/', async (req, res) => {
         console.log('[POST /ordenes] Body recibido:', JSON.stringify(req.body, null, 2));
         console.log('==========================================');
 
-        const { data: maxIdResult } = await supabase
-            .from('orden_trabajo')
-            .select('orden_id')
-            .order('orden_id', { ascending: false })
-            .limit(1)
-            .single();
-
-        const nextId = maxIdResult ? maxIdResult.orden_id + 1 : 1;
-
         const dataWithDefaults = {
             ...req.body,
-            orden_id: nextId,
             usuario_asignado: req.body.tecnico_id || req.body.usuario_asignado || null,
             fecha_apertura: req.body.fecha_apertura || new Date().toISOString(),
             estado: req.body.estado || 'Abierta',

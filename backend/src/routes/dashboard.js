@@ -66,48 +66,71 @@ function getRelativeTime(dateString) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
+    let relative = '';
     if (diffMins < 60) {
-        return diffMins <= 1 ? 'Hace 1 minuto' : `Hace ${diffMins} minutos`;
+        relative = diffMins <= 1 ? 'Hace 1 min' : `Hace ${diffMins} mins`;
     } else if (diffHours < 24) {
-        return diffHours === 1 ? 'Hace 1 hora' : `Hace ${diffHours} horas`;
+        relative = diffHours === 1 ? 'Hace 1 hora' : `Hace ${diffHours} horas`;
     } else if (diffDays < 30) {
-        return diffDays === 1 ? 'Hace 1 día' : `Hace ${diffDays} días`;
+        relative = diffDays === 1 ? 'Hace 1 día' : `Hace ${diffDays} días`;
     } else {
-        // For older dates, show the actual date
-        return date.toLocaleDateString('es-ES', {
-            year: 'numeric',
+        relative = date.toLocaleDateString('es-ES', {
             month: 'short',
             day: 'numeric'
         });
     }
+
+    // Add full time
+    const fullTime = date.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const fullDate = date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+
+    return {
+        relative,
+        full: `${fullDate}, ${fullTime}`,
+        raw: dateString
+    };
 }
 
 // GET recent activity - Now uses the actividad table
 router.get('/activity', async (req, res) => {
     try {
+        const limit = parseInt(req.query.limit || 10, 10);
+
         // First, try to get activities from the new actividad table
         const { data: actividadData, error: actividadError } = await supabase
             .from('actividad')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(10);
+            .limit(limit);
 
         // If we have activities in the table, use them
         if (!actividadError && actividadData && actividadData.length > 0) {
-            const activities = actividadData.map(act => ({
-                id: act.actividad_id,
-                type: act.tipo_operacion,
-                description: act.descripcion || act.titulo,
-                timestamp: act.created_at,
-                status: act.tipo_operacion,
-                equipment: act.titulo,
-                client: act.entidad,
-                time: getRelativeTime(act.created_at),
-                // Additional fields from actividad table
-                entidad: act.entidad,
-                entidad_id: act.entidad_id,
-                usuario: act.usuario
-            }));
+            const activities = actividadData.map(act => {
+                const timeInfo = getRelativeTime(act.created_at);
+                return {
+                    id: act.actividad_id,
+                    type: act.tipo_operacion,
+                    description: act.descripcion || act.titulo,
+                    timestamp: act.created_at,
+                    status: act.tipo_operacion,
+                    equipment: act.titulo,
+                    client: act.entidad,
+                    time: timeInfo.relative,
+                    fullTime: timeInfo.full,
+                    // Additional fields from actividad table
+                    entidad: act.entidad,
+                    entidad_id: act.entidad_id,
+                    usuario: act.usuario
+                };
+            });
 
             return res.json({ data: activities, error: null });
         }
@@ -121,7 +144,7 @@ router.get('/activity', async (req, res) => {
                 cliente:cliente_id(nombre)
             `)
             .order('fecha_apertura', { ascending: false })
-            .limit(10);
+            .limit(limit);
 
         if (error) throw error;
 
@@ -129,6 +152,8 @@ router.get('/activity', async (req, res) => {
             const equipoInfo = orden.equipo
                 ? `${orden.equipo.modelo || 'Modelo'} (${orden.equipo.numero_serie || 'S/N'})`
                 : `Orden #${orden.orden_id}`;
+
+            const timeInfo = getRelativeTime(orden.fecha_apertura);
 
             return {
                 id: orden.orden_id,
@@ -138,7 +163,8 @@ router.get('/activity', async (req, res) => {
                 status: orden.estado || 'Abierta',
                 equipment: equipoInfo,
                 client: orden.cliente?.nombre || 'Cliente no especificado',
-                time: getRelativeTime(orden.fecha_apertura)
+                time: timeInfo.relative,
+                fullTime: timeInfo.full
             };
         });
 

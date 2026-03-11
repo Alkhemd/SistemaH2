@@ -94,6 +94,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
     }
   });
 
+
   useEffect(() => {
     if (equipment?.fotoUrl || equipment?.foto_url) {
       setPreviewUrl(equipment.fotoUrl || equipment.foto_url);
@@ -256,6 +257,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
                 <p className="text-red-500 text-sm mt-1">{errors.modalidad_id.message}</p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cliente
@@ -273,6 +275,7 @@ export const SimpleEquipmentForm: React.FC<SimpleEquipmentFormProps> = ({
                 <p className="text-red-500 text-sm mt-1">{errors.cliente_id.message}</p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Estado

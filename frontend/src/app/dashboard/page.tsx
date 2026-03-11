@@ -18,6 +18,7 @@ const EquipmentStatusChart = dynamic(() => import('@/components/charts/Equipment
 const OrdersPriorityChart = dynamic(() => import('@/components/charts/OrdersPriorityChart'), { ssr: false });
 const TrendsChart = dynamic(() => import('@/components/dashboard/TrendsChart'), { ssr: false });
 const TechnicianWorkloadList = dynamic(() => import('@/components/dashboard/TechnicianWorkloadList'), { ssr: false });
+const ActivityTimeline = dynamic(() => import('@/components/dashboard/ActivityTimeline'), { ssr: false });
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -247,63 +248,7 @@ export default function DashboardPage() {
         {/* Recent Activity Full Width */}
         <div className="card lg:col-span-3">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold neuro-text-primary">
-                Actividad Reciente
-              </h2>
-              <button className="neuro-button px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
-                Ver todo
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {recentActivity && recentActivity.length > 0 ? (
-                recentActivity.map((activity: any, index: number) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-center justify-between p-4 neuro-convex-sm hover:neuro-concave-sm rounded-xl transition-all duration-200 cursor-pointer"
-                    style={{ animationDelay: `${0.1 + index * 0.1}s` }}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'bg-green-500' :
-                        activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`} />
-                      <div>
-                        <p className="font-medium neuro-text-primary">
-                          {activity.equipment || 'Equipo sin nombre'}
-                        </p>
-                        <p className="text-sm neuro-text-secondary">
-                          {activity.client || 'Cliente desconocido'} • {activity.description || 'Sin descripción'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-1 hidden sm:block">
-                      <p className="text-sm neuro-text-secondary">
-                        {activity.time || 'Tiempo desconocido'}
-                      </p>
-                      <div className="flex items-center space-x-2 justify-end">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.type === 'Crítica' || activity.type === 'Alta' ? 'text-red-600' :
-                          activity.type === 'Media' ? 'text-yellow-600' : 'text-green-600'
-                          }`}>
-                          {activity.type || 'Normal'}
-                        </span>
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium neuro-convex-sm ${activity.status === 'Cerrada' || activity.status === 'Completada' ? 'text-green-600 bg-green-50' :
-                          activity.status === 'En Proceso' || activity.status === 'Asignada' ? 'text-yellow-600 bg-yellow-50' :
-                            'text-red-600 bg-red-50'
-                          }`}>
-                          {activity.status?.replace('_', ' ') || 'Pendiente'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 neuro-text-secondary">
-                  <p>No hay actividad reciente</p>
-                </div>
-              )}
-            </div>
+            <ActivityTimeline activities={recentActivity} />
           </div>
         </div>
       </div>

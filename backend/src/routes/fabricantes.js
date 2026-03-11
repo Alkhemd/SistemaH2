@@ -29,7 +29,8 @@ router.get('/paginated', async (req, res) => {
             .select('*', { count: 'exact' });
 
         if (search.trim()) {
-            query = query.ilike('nombre', `%${search}%`);
+            const sanitizedSearch = search.trim().replace(/[()]/g, '');
+            query = query.ilike('nombre', `%${sanitizedSearch}%`);
         }
 
         query = query
@@ -59,18 +60,9 @@ router.get('/paginated', async (req, res) => {
 // POST create fabricante
 router.post('/', async (req, res) => {
     try {
-        const { data: maxIdResult } = await supabase
-            .from('fabricante')
-            .select('fabricante_id')
-            .order('fabricante_id', { ascending: false })
-            .limit(1)
-            .single();
-
-        const nextId = maxIdResult ? maxIdResult.fabricante_id + 1 : 1;
-
         const { data, error } = await supabase
             .from('fabricante')
-            .insert([{ ...req.body, fabricante_id: nextId }])
+            .insert([{ ...req.body }])
             .select()
             .single();
 

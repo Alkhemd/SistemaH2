@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Configuración base de la API - Backend Node.js + Express
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 // Configuración de axios
 const api = axios.create({

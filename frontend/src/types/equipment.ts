@@ -34,7 +34,7 @@ export interface ClientUI {
   };
   fechaRegistro: string;
   ultimaActividad: string;
-  estado_cliente: 'activo' | 'inactivo';
+  activo: boolean;
 }
 
 export interface OrderUI {
@@ -115,7 +115,7 @@ export const mapClientToUI = (client: Client): ClientUI => {
     contacto: contactoObj,
     fechaRegistro: client.fechaRegistro || new Date().toISOString().split('T')[0],
     ultimaActividad: client.ultimaActividad || new Date().toISOString().split('T')[0],
-    estado_cliente: client.estado_cliente === 'activo' || client.estado_cliente === 'inactivo' ? client.estado_cliente : 'activo',
+    activo: !!client.activo,
   };
 };
 
