@@ -226,34 +226,7 @@ export default function SidebarWithBlur() {
           </div>
         </nav>
 
-        {/* Footer */}
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200/50 backdrop-blur-xl cursor-pointer neuro-convex-sm m-2 mb-4"
-          whileHover={{
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            transform: 'translateY(-1px)'
-          }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="flex items-center space-x-3">
-            <motion.div
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold shadow-lg"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              U
-            </motion.div>
-            <div className="flex-1 min-w-0">
-              <motion.p
-                className="text-sm font-medium text-gray-900 truncate"
-                whileHover={{ x: 2 }}
-              >
-                Usuario
-              </motion.p>
-              <p className="text-xs text-gray-500 truncate">Admin</p>
-            </div>
-          </div>
-        </motion.div>
+
       </motion.aside>
     </>
   );
